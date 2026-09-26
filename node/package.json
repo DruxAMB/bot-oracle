@@ -1,0 +1,13 @@
+{
+  "name": "bot-oracle-node",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Off-chain oracle node: listens for RequestSent, runs inference, fulfills on-chain",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "ethers": "^6.17.0"
+  }
+}

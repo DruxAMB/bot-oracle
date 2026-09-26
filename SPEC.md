@@ -255,10 +255,21 @@ Phase 3 (marked `MAINNET-GATE`) — before deploy, not after.
   mainnet RPC, USDT bridge in AND out, WBOT swap on BDEX — small real funds
 - [ ] Leaderboard listing eligibility confirmed in writing via official channel
 
-**Deployments log** (per chain-skill convention — network / address / tx / block):
+**Deployments log** (per chain-skill convention — network / address / tx):
 | Contract | Network | Address | Deploy tx |
 |---|---|---|---|
 | SpikePing | testnet-968 | `0x1C8695E71faB85fFdd4C0c5ac588Ef6a3EFF5B62` | `0xabf255d45a3c7d58cc2727afcbfd56bb6fd6ac895a86ae1084fc213bd4d66ffa` |
+| ModelRegistry | testnet-968 | `0x8f487264E1B183F588CAc678D000754D3bd9B07E` | `0xbd1b38dab9805af563aa56389d454c29d19a8a47fa5a7a6bbcb98f639bd0e90f` |
+| OperatorRegistry | testnet-968 | `0x824271cc9f2A1556e4ecB6287830f200F92DB9Da` | `0xe7a013445a79cfca774f3920641d6c8ee3bb382c40cb684d78c96cda6c574875` |
+| OracleCoordinator | testnet-968 | `0x7F7e5256cA568B981e1a09642d8F756D9c89F706` | `0x56c01f382c6ec5836e64c28ff977f875d0d03bb694b7adf4ba279214acaf4fa6` |
+
+**Phase 1 evidence (testnet, 2026-09-26):** operator registered (0.5 tBOT
+stake, tx `0xe66f1139…`); request #1 `0xf233be0f…` → node picked up
+`RequestSent` via getLogs-poll → echo inference → `fulfill` tx
+`0x990219deccc2c0e4ac4a3c86d0f7788b5ec15ca7e39bc587de9e34bd459659ec`;
+on-chain: status Fulfilled, operator paid 0.0009, protocol accrued 0.0001
+(10% cut verified). Bugs caught by exercising, not reasoning: topics[2] is
+requester not modelId; restarts needed a lookback rescan.
 
 **Phase 1 — Core protocol (testnet)**
 Coordinator + registry + model registry + consumer interface; oracle-node with

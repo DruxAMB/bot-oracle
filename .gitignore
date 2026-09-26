@@ -8,3 +8,6 @@ contracts/lib/
 contracts/out/
 contracts/cache/
 contracts/broadcast/
+
+# node runtime state
+node/state/
