@@ -1,0 +1,4 @@
+node_modules/
+scripts/.burner.json
+.env*
+!.env.example
