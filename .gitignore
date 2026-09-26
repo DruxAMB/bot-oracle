@@ -2,3 +2,9 @@ node_modules/
 scripts/.burner.json
 .env*
 !.env.example
+
+# foundry
+contracts/lib/
+contracts/out/
+contracts/cache/
+contracts/broadcast/

@@ -326,4 +326,12 @@ Single repo, MIT license, lockfile committed — same conventions as `creditpass
   models deferred to a later tier.
 - **Billing**: crypto-only at launch (USDT deposits + API keys); no fiat.
 - **Phase 0**: testnet-only; mainnet verification is a Phase 3 hard gate.
+- **v1 fees**: native BOT only; USDT arrives via prepaid subscription vault in
+  Phase 2 (keeps `request()` signature stable).
+- **Toolchain**: Foundry v1.8.x (`forge`/`cast`); deps `forge-std@1.16.2`,
+  `openzeppelin-contracts@5.7.0` via `forge install --no-git` (flat repo,
+  versions pinned here).
+- **Slasher role**: OperatorRegistry.slash is callable by owner OR the
+  coordinator's registered `slasher` — slashing power lives inside the
+  dispute-resolution path, not an EOA.
 - **Open**: product name ("bot-oracle" is a placeholder).
