@@ -1,0 +1,14 @@
+{
+  "name": "@bot-oracle/sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Client SDK for the BOT Chain AI oracle: request, awaitResult, verifyResult",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./solidity": "./solidity/IOracleConsumer.sol"
+  },
+  "dependencies": {
+    "ethers": "^6.17.0"
+  }
+}

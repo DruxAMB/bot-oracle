@@ -1,0 +1,13 @@
+{
+  "name": "bot-oracle-gateway",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "HTTP gateway for the BOT Chain AI oracle — API-key access, on-chain anchoring",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "ethers": "^6.17.0"
+  }
+}

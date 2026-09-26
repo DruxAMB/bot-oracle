@@ -11,3 +11,4 @@ contracts/broadcast/
 
 # node runtime state
 node/state/
+gateway/state/

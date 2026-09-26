@@ -35,6 +35,7 @@ const COORD_ABI = [
   "event RequestSent(uint256 indexed requestId, address indexed requester, bytes32 indexed modelId, bytes32 inputHash, bytes input, address callbackContract)",
 ];
 const MODELS_ABI = ["function models(bytes32) view returns (uint256 priceWei, bytes32 containerHash, string backend, bool active)"];
+const SENTINEL_ABI = ["function tick() payable returns (uint256)"];
 const coordinator = new Contract(cfg.coordinator, COORD_ABI, operator);
 const models = new Contract(cfg.models, MODELS_ABI, provider);
 const abi = AbiCoder.defaultAbiCoder();
@@ -130,3 +131,24 @@ async function tick() {
 }
 setInterval(tick, cfg.pollMs);
 await tick();
+
+// --- optional Sentinel keeper ---
+// SENTINEL_ADDRESS set => this node also fires tick() on cadence; the query
+// fee comes from Sentinel's own funded balance, the keeper pays gas only.
+if (process.env.SENTINEL_ADDRESS) {
+  const sentinel = new Contract(getAddress(process.env.SENTINEL_ADDRESS), SENTINEL_ABI, operator);
+  const everyMs = Number(process.env.SENTINEL_INTERVAL_MS ?? "300000");
+  const fire = async () => {
+    try {
+      const tx = await sentinel.tick();
+      console.log(`sentinel tick tx ${tx.hash}`);
+      await tx.wait();
+    } catch (e) {
+      // TooEarly / underfunded are routine — log once per fire, keep going
+      console.log(`sentinel tick skipped: ${(e.shortMessage ?? e.message)?.slice(0, 80)}`);
+    }
+  };
+  setInterval(fire, everyMs);
+  console.log(`sentinel keeper armed on ${await sentinel.getAddress()} every ${everyMs}ms`);
+  // don't fire immediately — respect the on-chain interval
+}

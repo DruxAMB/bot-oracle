@@ -354,4 +354,9 @@ Single repo, MIT license, lockfile committed — same conventions as `creditpass
 - **Slasher role**: OperatorRegistry.slash is callable by owner OR the
   coordinator's registered `slasher` — slashing power lives inside the
   dispute-resolution path, not an EOA.
+- **Gateway billing v1**: API keys issued by admin after USDT payment
+  (manual reconciliation); quotas enforced + metered per key. Automated
+  on-chain credit top-up is a later phase.
+- **Dashboard**: server-rendered Next.js 16 (`force-dynamic`), read-only
+  JSON-RPC — no wallet needed; every stat verifiable on-chain.
 - **Open**: product name ("bot-oracle" is a placeholder).
