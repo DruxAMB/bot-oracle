@@ -1,9 +1,13 @@
 // Model backends. v1 is passthrough-first per spec: hosted LLM APIs behind a
 // small interface. "echo" exists so the full pipeline is testable with no keys.
 
+import { getBytes } from "ethers";
+
 const DECODER = new TextDecoder();
 
-function parsePrompt(inputBytes) {
+function parsePrompt(rawInput) {
+  // abi.decode hands us a hex string — normalize to bytes before anything else.
+  const inputBytes = typeof rawInput === "string" ? getBytes(rawInput) : rawInput;
   // Consumers send ABI-encoded payloads; try abi.decode(string) first, then
   // raw utf8, else hex. Model-defined per spec — keep permissive here.
   try {

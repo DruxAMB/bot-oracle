@@ -87,7 +87,10 @@ async function serve(requestId, job) {
 
     console.log(`#${requestId} inference via ${m.backend}`);
     const text = await runInference(m.backend, job.input, cfg);
-    const output = abi.encode(["string"], [text]);
+    // Cap output size — a consumer's callback pays storage gas per byte; an
+    // unbounded backend response can price the callback into OutOfGas.
+    const capped = text.length > 2000 ? text.slice(0, 2000) : text;
+    const output = abi.encode(["string"], [capped]);
 
     const tx = await coordinator.fulfill(requestId, output);
     console.log(`#${requestId} fulfill tx ${tx.hash}`);

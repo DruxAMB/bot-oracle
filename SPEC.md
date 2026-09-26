@@ -262,6 +262,7 @@ Phase 3 (marked `MAINNET-GATE`) — before deploy, not after.
 | ModelRegistry | testnet-968 | `0x8f487264E1B183F588CAc678D000754D3bd9B07E` | `0xbd1b38dab9805af563aa56389d454c29d19a8a47fa5a7a6bbcb98f639bd0e90f` |
 | OperatorRegistry | testnet-968 | `0x824271cc9f2A1556e4ecB6287830f200F92DB9Da` | `0xe7a013445a79cfca774f3920641d6c8ee3bb382c40cb684d78c96cda6c574875` |
 | OracleCoordinator | testnet-968 | `0x7F7e5256cA568B981e1a09642d8F756D9c89F706` | `0x56c01f382c6ec5836e64c28ff977f875d0d03bb694b7adf4ba279214acaf4fa6` |
+| Sentinel (echo:v1, 5min) | testnet-968 | `0x0245cc872b5F51197dDE6E0dc3b7A21a3c55F787` | forge broadcast run |
 
 **Phase 1 evidence (testnet, 2026-09-26):** operator registered (0.5 tBOT
 stake, tx `0xe66f1139…`); request #1 `0xf233be0f…` → node picked up
@@ -270,6 +271,14 @@ stake, tx `0xe66f1139…`); request #1 `0xf233be0f…` → node picked up
 on-chain: status Fulfilled, operator paid 0.0009, protocol accrued 0.0001
 (10% cut verified). Bugs caught by exercising, not reasoning: topics[2] is
 requester not modelId; restarts needed a lookback rescan.
+
+**Sentinel evidence (testnet):** funded 0.5 tBOT (~500 queries); tick #2
+`0xcdf31181516e9dc83e9a349592786dbcb74a3df51d47efb82363ffe35322112f` →
+request #3 → fulfill `0x93854d35…` → **callback landed** — `latestReport`
+reads `echo:Summarize the state of the BOT Chain ecosystem…[tick 1]`.
+Callback round-trip verified on-chain including the reverting-callback edge
+(CallbackResult=false on oversized outputs → node now caps output at 2KB and
+normalizes hex-string inputs to bytes — both found by exercising).
 
 **Phase 1 — Core protocol (testnet)**
 Coordinator + registry + model registry + consumer interface; oracle-node with
