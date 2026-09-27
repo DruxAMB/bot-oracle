@@ -94,7 +94,18 @@ async function serve(requestId, job) {
     const capped = text.length > 2000 ? text.slice(0, 2000) : text;
     const output = abi.encode(["string"], [capped]);
 
-    const tx = await coordinator.fulfill(requestId, output);
+    // Preflight: a consumer's callback can burn arbitrary gas — the operator
+    // pays it. Simulate + cap the cost before broadcasting the fulfill.
+    await coordinator.fulfill.staticCall(requestId, output);
+    const gasEst = await coordinator.fulfill.estimateGas(requestId, output);
+    const gasCap = BigInt(process.env.FULFILL_GAS_CAP ?? "2000000");
+    if (gasEst > gasCap) {
+      console.error(`#${requestId} fulfill needs ${gasEst} > cap ${gasCap} — refusing (gas-grief protection)`);
+      pending.delete(requestId);
+      return;
+    }
+
+    const tx = await coordinator.fulfill(requestId, output, { gasLimit: (gasEst * 130n) / 100n });
     console.log(`#${requestId} fulfill tx ${tx.hash}`);
     await tx.wait();
     pending.delete(requestId);

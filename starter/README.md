@@ -6,10 +6,10 @@ The minimal contract + flow for consuming the BOT Chain AI oracle. Clone, deploy
 
 | Contract | Address |
 |---|---|
-| OracleCoordinator | `0x7F7e5256cA568B981e1a09642d8F756D9c89F706` |
-| ModelRegistry | `0x8f487264E1B183F588CAc678D000754D3bd9B07E` |
-| OperatorRegistry | `0x824271cc9f2A1556e4ecB6287830f200F92DB9Da` |
-| Sentinel (demo consumer) | `0x0245cc872b5F51197dDE6E0dc3b7A21a3c55F787` |
+| OracleCoordinator | `0x4861Ff97A82436d64514C0B119c4796F46a4d8Da` |
+| ModelRegistry | `0xb208fb3016c14b0946bf3FBbe1Def28d72F63193` |
+| OperatorRegistry | `0xf22dA276EAA3c4de433115a95111907A6338D3A5` |
+| Sentinel (demo consumer) | `0x1ea8e8429Ecae0Dfa8dEbb93983DDe93EA31a014` |
 
 ## The pattern (see `Consumer.sol`)
 
@@ -35,7 +35,7 @@ import { OracleClient } from "@bot-oracle/sdk";
 const client = new OracleClient({
   rpcUrl: "https://rpc.bohr.life",
   chainId: 968,
-  coordinator: "0x7F7e5256cA568B981e1a09642d8F756D9c89F706",
+  coordinator: "0x4861Ff97A82436d64514C0B119c4796F46a4d8Da",
   signer, // your funded wallet
 });
 

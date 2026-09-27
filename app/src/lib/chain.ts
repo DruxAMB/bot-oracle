@@ -5,10 +5,10 @@ export const NET = {
   rpc: process.env.NEXT_PUBLIC_RPC_URL ?? "https://rpc.bohr.life",
   chainId: Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? "968"),
   explorer: process.env.NEXT_PUBLIC_EXPLORER ?? "https://scan.bohr.life",
-  coordinator: process.env.NEXT_PUBLIC_COORDINATOR ?? "0x7F7e5256cA568B981e1a09642d8F756D9c89F706",
-  models: process.env.NEXT_PUBLIC_MODELS ?? "0x8f487264E1B183F588CAc678D000754D3bd9B07E",
-  registry: process.env.NEXT_PUBLIC_REGISTRY ?? "0x824271cc9f2A1556e4ecB6287830f200F92DB9Da",
-  sentinel: process.env.NEXT_PUBLIC_SENTINEL ?? "0x0245cc872b5F51197dDE6E0dc3b7A21a3c55F787",
+  coordinator: process.env.NEXT_PUBLIC_COORDINATOR ?? "0x4861Ff97A82436d64514C0B119c4796F46a4d8Da",
+  models: process.env.NEXT_PUBLIC_MODELS ?? "0xb208fb3016c14b0946bf3FBbe1Def28d72F63193",
+  registry: process.env.NEXT_PUBLIC_REGISTRY ?? "0xf22dA276EAA3c4de433115a95111907A6338D3A5",
+  sentinel: process.env.NEXT_PUBLIC_SENTINEL ?? "0x1ea8e8429Ecae0Dfa8dEbb93983DDe93EA31a014",
 };
 
 const COORD_ABI = [
@@ -172,7 +172,12 @@ export async function loadDash(): Promise<DashData> {
     return {
       block,
       totalRequests: nextId - 1n,
-      fulfilled: fulfilledLogs.length,
+      // exact count via enumeration — the log query is windowed
+      fulfilled: await Promise.all(
+        Array.from({ length: Math.min(Number(nextId - 1n), 500) }, (_, i) =>
+          coord.requests(i + 1).then((r) => Number(r.status))
+        )
+      ).then((ss) => ss.filter((s) => s === 1 || s === 4).length),
       feesWei: fees,
       operatorCount: ops,
       minStake: stake,

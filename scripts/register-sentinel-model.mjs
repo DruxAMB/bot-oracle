@@ -5,8 +5,8 @@ import { readFileSync } from "node:fs";
 
 const RPC = process.env.RPC_URL ?? "https://rpc.bohr.life";
 const CHAIN_ID = Number(process.env.CHAIN_ID ?? "968");
-const MODELS = "0x8f487264E1B183F588CAc678D000754D3bd9B07E";
-const SENTINEL = "0x0245cc872b5F51197dDE6E0dc3b7A21a3c55F787";
+const MODELS = process.env.MODELS_ADDRESS ?? "0xb208fb3016c14b0946bf3FBbe1Def28d72F63193";
+const SENTINEL = process.env.SENTINEL_ADDRESS ?? "0x1ea8e8429Ecae0Dfa8dEbb93983DDe93EA31a014";
 
 const key = JSON.parse(readFileSync(new URL("./.burner.json", import.meta.url))).privateKey;
 const provider = new JsonRpcProvider(RPC, CHAIN_ID);

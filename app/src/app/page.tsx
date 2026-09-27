@@ -46,7 +46,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-surface text-zinc-200 font-sans">
-      <meta httpEquiv="refresh" content="30" />
+      <meta httpEquiv="refresh" content="60" />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <header className="mb-8 flex flex-wrap items-center gap-3 justify-between">
           <div>
@@ -63,7 +63,7 @@ export default async function Home() {
           ) : (
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-800 bg-emerald-950/40 px-3 py-1 text-xs text-emerald-300">
               <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              live · refreshes every 30s
+              live · refreshes every 60s
             </span>
           )}
         </header>
@@ -219,9 +219,12 @@ export default async function Home() {
   -H 'x-api-key: <issued-key>' \\
   -d '{"model":"echo:v1","prompt":"hello"}'`}</pre>
             <p className="text-xs text-zinc-500 mt-3 mb-2">JS SDK:</p>
-            <pre className="overflow-x-auto rounded bg-zinc-950 border border-zinc-800/70 p-3 text-xs text-zinc-300">{`import { BotOracle } from "@bot-oracle/sdk";
-const o = new BotOracle({ rpc, coordinator, signer });
-const { result } = await o.requestAndWait("echo:v1", "hello");`}</pre>
+            <pre className="overflow-x-auto rounded bg-zinc-950 border border-zinc-800/70 p-3 text-xs text-zinc-300">{`import { OracleClient } from "@bot-oracle/sdk";
+const o = new OracleClient({ rpcUrl, chainId: 968, coordinator, models, signer });
+const value = await o.priceOf(OracleClient.modelId("echo:v1"));
+const { requestId } = await o.request({ modelId: OracleClient.modelId("echo:v1"), prompt: "hello", value });
+await o.awaitResult(requestId);
+const text = await o.getResult(requestId);`}</pre>
           </section>
 
           <section aria-labelledby="deploy-h" className="rounded-lg border border-zinc-800 p-5">

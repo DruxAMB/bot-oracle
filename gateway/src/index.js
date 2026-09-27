@@ -32,6 +32,8 @@ const provider = new JsonRpcProvider(cfg.rpc, cfg.chainId);
 const wallet = new Wallet(cfg.walletKey, provider);
 const COORD_ABI = [
   "function request(bytes32,bytes,address,uint64) payable returns (uint256)",
+  "function requestTimeout() view returns (uint64)",
+  "function refundIfTimedOut(uint256)",
   "function requests(uint256) view returns (address,bytes32,bytes32,uint256,address,uint64,uint64,uint64,uint8,bytes32,address,address)",
   "event RequestFulfilled(uint256 indexed requestId, address indexed operator, bytes32 outputHash, bytes output)",
   "event RequestSent(uint256 indexed requestId, address indexed requester, bytes32 indexed modelId, bytes32 inputHash, bytes input, address callbackContract)",
@@ -73,7 +75,7 @@ async function waitFulfill(requestId, timeoutMs) {
 }
 
 async function handleQuery(req, res, key) {
-  const body = await readBody(req);
+  const body = await readBody(req, 64 * 1024);
   const { model, prompt, input, wait = true } = JSON.parse(body || "{}");
   if (!model || (!prompt && !input)) return json(res, 400, { error: "need {model, prompt|input}" });
 
@@ -98,15 +100,48 @@ async function handleQuery(req, res, key) {
   });
 }
 
-function readBody(req) {
+function readBody(req, limit = 64 * 1024) {
   return new Promise((ok, no) => {
-    let d = ""; req.on("data", (c) => (d += c)); req.on("end", () => ok(d)); req.on("error", no);
+    let d = "";
+    req.on("data", (c) => {
+      d += c;
+      if (d.length > limit) { no(Object.assign(new Error("body too large"), { status: 413 })); req.destroy(); }
+    });
+    req.on("end", () => ok(d));
+    req.on("error", no);
   });
 }
 function charge(key) {
   usage[key] = (usage[key] ?? 0) + 1;
   saveUsage(usage);
 }
+
+// --- refund sweeper ---------------------------------------------------------
+// The gateway funds escrow from its own wallet. If the operator never serves
+// a request, the fee sits locked until refundIfTimedOut is called — it's
+// permissionless, so we call it ourselves on a loop.
+async function sweepRefunds() {
+  try {
+    const timeout = await coordinator.requestTimeout();
+    const head = await provider.getBlockNumber();
+    const logs = await coordinator.queryFilter(
+      coordinator.filters.RequestSent(null, wallet.address),
+      Math.max(0, head - 200_000)
+    );
+    const now = Math.floor(Date.now() / 1000);
+    for (const l of logs) {
+      const r = await coordinator.requests(l.args.requestId);
+      if (Number(r.status) === 0 && now > Number(r.createdAt) + Number(timeout)) {
+        const tx = await coordinator.refundIfTimedOut(l.args.requestId);
+        await tx.wait();
+        console.log(`refund swept for request ${l.args.requestId} tx ${tx.hash}`);
+      }
+    }
+  } catch (e) {
+    console.error(`sweeper error: ${e.message?.slice(0, 160)}`);
+  }
+}
+setInterval(sweepRefunds, 60_000);
 function json(res, code, obj) {
   res.writeHead(code, { "content-type": "application/json" });
   res.end(JSON.stringify(obj));

@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 /// Minimal oracle consumer — clone this, point it at the deployed coordinator,
 /// implement IOracleConsumer, fund it, done.
-/// Testnet coordinator: 0x7F7e5256cA568B981e1a09642d8F756D9c89F706 (chain 968)
+/// Testnet coordinator: 0x4861Ff97A82436d64514C0B119c4796F46a4d8Da (chain 968)
 interface IOracleCoordinator {
     function request(
         bytes32 modelId,

@@ -79,6 +79,27 @@ contract SentinelTest is Test {
         sentinel.onOracleResult(1, abi.encode("fake"));
     }
 
+    function test_outOfOrderFulfillKeepsFresherReport() public {
+        uint256 id1 = sentinel.tick();
+        vm.warp(block.timestamp + INTERVAL + 1);
+        uint256 id2 = sentinel.tick();
+        vm.startPrank(operator);
+        coordinator.fulfill(id2, abi.encode("newer report"));
+        coordinator.fulfill(id1, abi.encode("stale report"));
+        vm.stopPrank();
+        assertEq(sentinel.latestReport(), "newer report");
+    }
+
+    function test_reRegisterAfterWithdrawRestoresActive() public {
+        vm.startPrank(operator);
+        operators.requestUnstake();
+        vm.warp(block.timestamp + 1 hours + 1);
+        operators.withdrawStake();
+        operators.register{value: 0.1 ether}("https://node.local");
+        vm.stopPrank();
+        assertTrue(operators.isActiveOperator(operator));
+    }
+
     function test_tickAcceptsTopUp() public {
         Sentinel poor = new Sentinel(
             address(coordinator), MODEL, PRICE, INTERVAL, 300_000, "p"

@@ -14,11 +14,14 @@ function parsePrompt(rawInput) {
   // Consumers send ABI-encoded payloads; try abi.decode(string) first, then
   // raw utf8, else hex. Model-defined per spec — keep permissive here.
   try {
-    // abi-encoded single string: 32B offset + 32B len + data
-    if (inputBytes.length > 64) {
+    // abi.encode(string): 32B offset (must be 32) + 32B byte-length + utf8 data.
+    // Compare byte lengths — char count diverges for non-ASCII.
+    if (inputBytes.length >= 64) {
+      const offset = Number(BigInt("0x" + Buffer.from(inputBytes.slice(0, 32)).toString("hex")));
       const len = Number(BigInt("0x" + Buffer.from(inputBytes.slice(32, 64)).toString("hex")));
-      const text = DECODER.decode(inputBytes.slice(64, 64 + len));
-      if (text.length === len && len > 0) return text;
+      if (offset === 32 && len > 0 && inputBytes.length >= 64 + len) {
+        return DECODER.decode(inputBytes.slice(64, 64 + len));
+      }
     }
   } catch {}
   try { return DECODER.decode(inputBytes); } catch {}
@@ -47,7 +50,7 @@ async function chainSnapshot(cfg) {
   ], p);
   const snap = { ok: {} };
   const [block, gasPrice, nextId, fees] = await Promise.all([
-    p.getBlockNumber(), p.getGasPrice?.() ?? p.getFeeData().then(f => f.gasPrice),
+    p.getBlockNumber(), p.getFeeData().then(f => f.gasPrice),
     coord.nextRequestId(), coord.accruedProtocolFees(),
   ]);
   snap.block = Number(block);
@@ -104,12 +107,18 @@ async function sentinel(prompt, cfg) {
     "Write a concise intel brief (max 120 words) covering: liquidity read, activity read, notable anomalies. " +
     "Plain prose, no markdown.\n\nLIVE ON-CHAIN DATA:\n" + dataBrief +
     "\n\nANALYST REQUEST:\n" + prompt;
-  const text = await openaiCompat(llmPrompt, {
-    apiKey: cfg.openai.apiKey,
-    baseUrl: cfg.openai.baseUrl ?? "https://api.openai.com/v1",
-    model: cfg.openai.model || "gpt-4o-mini",
-  });
-  return `[sentinel:${cfg.openai.model || "gpt-4o-mini"}] ${text.trim()}`;
+  try {
+    const text = await openaiCompat(llmPrompt, {
+      apiKey: cfg.openai.apiKey,
+      baseUrl: cfg.openai.baseUrl ?? "https://api.openai.com/v1",
+      model: cfg.openai.model || "gpt-4o-mini",
+    });
+    return `[sentinel:${cfg.openai.model || "gpt-4o-mini"}] ${text.trim()}`;
+  } catch (e) {
+    // LLM down/quota exhausted — degrade to the deterministic report rather
+    // than leaving the request pending until timeout. Label stays honest.
+    return `${deterministicReport(prompt, s)} [llm error: ${e.message?.slice(0, 100)}]`;
+  }
 }
 
 async function openaiCompat(prompt, cfg) {

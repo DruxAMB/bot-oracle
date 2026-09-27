@@ -73,12 +73,20 @@ export class OracleClient {
     throw new Error(`request ${requestId} not fulfilled within ${timeoutMs}ms`);
   }
 
+  /** Model's per-query price — pass as `value` to request(). */
+  async priceOf(modelId) {
+    if (!this.models) throw new Error("models registry not configured");
+    const m = await this.models.models(modelId);
+    if (!m.active) throw new Error(`model ${modelId} inactive or unknown`);
+    return m.priceWei;
+  }
+
   /** Fetch the delivered output from the RequestFulfilled event. */
   async getResult(requestId) {
     const r = await this.coordinator.requests(requestId);
     if (Number(r.status) !== STATUS.FULFILLED) throw new Error(`request ${requestId} not fulfilled`);
     const filter = this.coordinator.filters.RequestFulfilled(requestId);
-    const logs = await this.coordinator.queryFilter(filter, r.fulfilledAt ? undefined : 0);
+    const logs = await this.coordinator.queryFilter(filter);
     const output = logs[0]?.args?.output;
     return output ? abi.decode(["string"], output)[0] : null;
   }

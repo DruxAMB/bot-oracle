@@ -46,6 +46,7 @@ contract OperatorRegistry is Ownable, ReentrancyGuard {
         Operator storage op = operators[msg.sender];
         if (op.stake > 0) revert AlreadyRegistered(msg.sender);
         op.stake = msg.value;
+        op.unstakeRequestedAt = 0; // cleared on re-register after a withdrawal
         op.nodeEndpoint = nodeEndpoint;
         operatorList.push(msg.sender);
         emit OperatorRegistered(msg.sender, msg.value, nodeEndpoint);

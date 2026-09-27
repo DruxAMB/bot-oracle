@@ -31,6 +31,7 @@ contract Deploy is Script {
         // Seed models. Prices in wei-BOT; echo model for pipeline tests.
         models.setModel(keccak256("echo:v1"), 0.001 ether, keccak256("echo-v1"), "echo:local", true);
         models.setModel(keccak256("gpt-4o-mini:v1"), 0.005 ether, keccak256("gpt4omini-v1"), "openai:gpt-4o-mini", true);
+        models.setModel(keccak256("sentinel:v1"), 0.001 ether, keccak256("sentinel-v1"), "sentinel:v1", true);
 
         vm.stopBroadcast();
 

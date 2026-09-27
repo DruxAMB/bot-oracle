@@ -24,6 +24,7 @@ contract Sentinel is IOracleConsumer, Ownable {
     uint256 public latestRequestId;
     string public latestReport;
     uint64 public latestReportAt;
+    uint256 public latestReportRequestId;
 
     event Ticked(uint256 indexed tickIndex, uint256 indexed requestId, bytes32 indexed modelId);
     event ReportPosted(uint256 indexed requestId, uint256 indexed tickIndex, string report);
@@ -76,8 +77,13 @@ contract Sentinel is IOracleConsumer, Ownable {
     function onOracleResult(uint256 requestId, bytes calldata output) external {
         if (msg.sender != address(oracle)) revert NotOracle(msg.sender);
         (string memory report) = abi.decode(output, (string));
-        latestReport = report;
-        latestReportAt = uint64(block.timestamp);
+        // Monotonic store: an out-of-order fulfill of an older request must
+        // not overwrite a fresher report (multi-operator world).
+        if (requestId >= latestReportRequestId) {
+            latestReport = report;
+            latestReportAt = uint64(block.timestamp);
+            latestReportRequestId = requestId;
+        }
         emit ReportPosted(requestId, tickIndex == 0 ? 0 : tickIndex - 1, report);
     }
 

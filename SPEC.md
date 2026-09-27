@@ -264,6 +264,16 @@ Phase 3 (marked `MAINNET-GATE`) — before deploy, not after.
 | OracleCoordinator | testnet-968 | `0x7F7e5256cA568B981e1a09642d8F756D9c89F706` | `0x56c01f382c6ec5836e64c28ff977f875d0d03bb694b7adf4ba279214acaf4fa6` |
 | Sentinel (echo:v1, 5min) | testnet-968 | `0x0245cc872b5F51197dDE6E0dc3b7A21a3c55F787` | forge broadcast run |
 
+**v2 stack (2026-09-27) — redeployed after audit fixes** (registry
+re-registration reset, Sentinel monotonic report guard); all four contracts
+verified on scan.bohr.life. The v1 contracts above are superseded and idle
+(v1 Sentinel still holds ~0.47 tBOT — no withdraw path by design).
+|| ModelRegistry v2 | testnet-968 | `0xb208fb3016c14b0946bf3FBbe1Def28d72F63193` | Deploy.s.sol broadcast |
+|| OperatorRegistry v2 | testnet-968 | `0xf22dA276EAA3c4de433115a95111907A6338D3A5` | Deploy.s.sol broadcast |
+|| OracleCoordinator v2 | testnet-968 | `0x4861Ff97A82436d64514C0B119c4796F46a4d8Da` | Deploy.s.sol broadcast |
+|| Sentinel v2 (sentinel:v1, 5min) | testnet-968 | `0x1ea8e8429Ecae0Dfa8dEbb93983DDe93EA31a014` | forge broadcast run |
+| operator registration | testnet-968 | burner `0xb8a5…Dd03` | `0x5bd2e87ef916002f24603cad6d4f6d84a0d65f05127547128bfa34007bca5e4b` |
+
 **Model registrations (testnet):** `echo:v1` `0x3910a127…` and
 `openai:gpt-4o-mini` `0x23b8fc05…` from Deploy.s.sol; `sentinel:v1`
 `0x2c9a7f15bb5bf1e2d68e4e3ceeb634b14036037af1bbcd69e8ba93b054fbc2fc` via
