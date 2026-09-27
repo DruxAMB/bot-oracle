@@ -83,10 +83,11 @@ function deterministicReport(prompt, s) {
     : `BDEX WBOT/USDT pair unreadable (${s.pairError ?? "no pair"}).`;
   return [
     `[sentinel:data — deterministic, no LLM key configured]`,
+    ``,
     `Block ${s.block}. Gas ${Number(s.gasGwei).toFixed(1)} gwei. ${liq}`,
     `Oracle: ${s.requests} requests served, ${Number(s.feesBot).toFixed(4)} BOT accrued in protocol fees.`,
     `Prompt on record: ${prompt.slice(0, 140)}`,
-  ].join(" ");
+  ].join("\n");
 }
 
 async function sentinel(prompt, cfg) {
@@ -114,7 +115,8 @@ async function sentinel(prompt, cfg) {
       baseUrl: cfg.openai.baseUrl ?? "https://api.openai.com/v1",
       model: cfg.openai.model || "gpt-4o-mini",
     });
-    return `[sentinel:${cfg.openai.model || "gpt-4o-mini"}] ${text.trim()}`;
+    // own line for the audit label — a mid-paragraph prefix breaks `###` heading parse
+    return `[sentinel:${cfg.openai.model || "gpt-4o-mini"}]\n\n${text.trim()}`;
   } catch (e) {
     // LLM down/quota exhausted — degrade to the deterministic report rather
     // than leaving the request pending until timeout. Label stays honest.

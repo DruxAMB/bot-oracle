@@ -16,7 +16,7 @@ const short = (a: string) => (a && a.length > 12 ? `${a.slice(0, 6)}…${a.slice
 const ago = (s: number) =>
   (s < 0 ? "now" : s < 60 ? `${s}s ago` : s < 3600 ? `${Math.floor(s / 60)}m ago` : `${Math.floor(s / 3600)}h ago`);
 
-const ext = (href: string, text: string, className = "text-sky-400 hover:underline") => (
+const ext = (href: string, text: string, className = "text-secondary hover:underline") => (
   <a className={className} href={href} target="_blank" rel="noopener noreferrer">
     {text}
   </a>
@@ -59,7 +59,7 @@ export default async function Home() {
   ];
 
   return (
-    <main className="min-h-screen bg-surface text-zinc-200 font-sans">
+    <main className="min-h-screen bg-surface text-foreground font-sans">
       <AutoRefresh intervalMs={60_000} />
       <WalletProvider
         chainId={NET.chainId}
@@ -70,20 +70,20 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
           <header className="mb-8 flex flex-wrap items-center gap-3 justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-white">bot-oracle</h1>
-              <p className="text-sm text-zinc-500">
+              <h1 className="text-2xl font-semibold text-foreground">bot-oracle</h1>
+              <p className="text-sm text-muted-foreground">
                 AI compute oracle · {NET.name} · block {d.block || "—"}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {d.offline ? (
-                <span className="inline-flex items-center gap-2 rounded-full border border-amber-800 bg-amber-950/40 px-3 py-1 text-xs text-amber-300">
-                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                <span className="inline-flex items-center gap-2 rounded-full border border-warning bg-card px-3 py-1 text-xs text-warning">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />
                   RPC offline — {d.offline}
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-800 bg-emerald-950/40 px-3 py-1 text-xs text-emerald-300">
-                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-success" />
                   live · refreshes every 60s
                 </span>
               )}
@@ -93,20 +93,20 @@ export default async function Home() {
 
         <section aria-label="network stats" className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           {stats.map((s) => (
-            <div key={s.label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
-              <div className="text-xs text-zinc-500 mb-1">{s.label}</div>
-              <div className="text-xl font-medium text-white">{s.value}</div>
-              {s.sub && <div className="text-[11px] text-zinc-600 mt-0.5">{s.sub}</div>}
+            <div key={s.label} className="rounded-lg border border-border bg-card p-4">
+              <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
+              <div className="text-xl font-medium text-foreground">{s.value}</div>
+              {s.sub && <div className="text-[11px] text-steel mt-0.5">{s.sub}</div>}
             </div>
           ))}
         </section>
 
-        <section aria-labelledby="sentinel-h" className="rounded-lg border border-emerald-900/60 bg-emerald-950/20 p-5 mb-8">
+        <section aria-labelledby="sentinel-h" className="category-mark rounded-lg border border-border bg-card p-5 mb-8">
           <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-            <h2 id="sentinel-h" className="text-sm font-medium text-emerald-300">
+            <h2 id="sentinel-h" className="text-sm font-medium text-foreground">
               Sentinel — autonomous consumer
             </h2>
-            <span className="text-xs text-zinc-500">
+            <span className="text-xs text-muted-foreground">
               {String(d.sentinelTicks)} ticks ·
               {d.sentinelReportAt ? ` last report ${ago(now - d.sentinelReportAt)}` : " no reports yet"} ·
               {nextTickIn != null && ` next tick in ~${Math.ceil(nextTickIn / 60)}m`} ·
@@ -116,11 +116,11 @@ export default async function Home() {
           {d.sentinelReport ? (
             <Markdown>{d.sentinelReport}</Markdown>
           ) : (
-            <p className="text-zinc-300 text-sm leading-relaxed">
+            <p className="text-secondary text-sm leading-relaxed">
               {"Awaiting first report — Sentinel ticks every " + Math.round(d.sentinelMinInterval / 60) + " minutes and stores each result here."}
             </p>
           )}
-          <p className="mt-3 text-xs text-zinc-600">
+          <p className="mt-3 text-xs text-steel">
             Every cycle is a paid oracle request — the product generates its own on-chain demand.{" "}
             {ext(`${NET.explorer}/address/${NET.sentinel}`, "contract ↗")}
           </p>
@@ -141,23 +141,23 @@ export default async function Home() {
         />
 
         <div className="grid md:grid-cols-2 gap-4 mb-8">
-          <section aria-labelledby="models-h" className="rounded-lg border border-zinc-800 p-5">
-            <h2 id="models-h" className="text-sm font-medium text-zinc-400 mb-3">Models</h2>
+          <section aria-labelledby="models-h" className="rounded-lg border border-border p-5">
+            <h2 id="models-h" className="text-sm font-medium text-secondary mb-3">Models</h2>
             {d.models.length === 0 ? (
-              <p className="text-sm text-zinc-600">No models registered.</p>
+              <p className="text-sm text-steel">No models registered.</p>
             ) : (
               <ul className="space-y-3">
                 {d.models.map((m) => (
                   <li key={m.modelId} className="text-sm">
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="font-mono text-xs text-zinc-300">
+                      <span className="font-mono text-xs text-secondary">
                         {KNOWN_MODELS[m.modelId.toLowerCase()] ?? short(m.modelId)}
                       </span>
-                      <span className={m.active ? "text-xs text-emerald-400" : "text-xs text-zinc-600"}>
+                      <span className={m.active ? "text-xs text-success" : "text-xs text-steel"}>
                         {m.active ? "active" : "inactive"}
                       </span>
                     </div>
-                    <div className="text-xs text-zinc-500">
+                    <div className="text-xs text-muted-foreground">
                       backend <span className="font-mono">{m.backend}</span> · {formatEther(m.priceWei)} BOT/query
                     </div>
                   </li>
@@ -166,21 +166,21 @@ export default async function Home() {
             )}
           </section>
 
-          <section aria-labelledby="ops-h" className="rounded-lg border border-zinc-800 p-5">
-            <h2 id="ops-h" className="text-sm font-medium text-zinc-400 mb-3">Operators</h2>
+          <section aria-labelledby="ops-h" className="rounded-lg border border-border p-5">
+            <h2 id="ops-h" className="text-sm font-medium text-secondary mb-3">Operators</h2>
             {d.operators.length === 0 ? (
-              <p className="text-sm text-zinc-600">No operators registered.</p>
+              <p className="text-sm text-steel">No operators registered.</p>
             ) : (
               <ul className="space-y-3">
                 {d.operators.map((o) => (
                   <li key={o.address} className="text-sm">
                     <div className="flex items-baseline justify-between gap-2">
-                      {ext(`${NET.explorer}/address/${o.address}`, short(o.address), "font-mono text-xs text-sky-400 hover:underline")}
-                      <span className={o.active ? "text-xs text-emerald-400" : "text-xs text-amber-400"}>
+                      {ext(`${NET.explorer}/address/${o.address}`, short(o.address), "font-mono text-xs text-secondary hover:underline")}
+                      <span className={o.active ? "text-xs text-success" : "text-xs text-warning"}>
                         {o.active ? "active" : "unstaking"}
                       </span>
                     </div>
-                    <div className="text-xs text-zinc-500">
+                    <div className="text-xs text-muted-foreground">
                       stake {formatEther(o.stake)} BOT{o.endpoint ? ` · ${o.endpoint}` : ""}
                     </div>
                   </li>
@@ -191,10 +191,10 @@ export default async function Home() {
         </div>
 
         <section aria-labelledby="feed-h" className="mb-8">
-          <h2 id="feed-h" className="text-sm font-medium text-zinc-400 mb-3">Recent requests</h2>
-          <div className="rounded-lg border border-zinc-800 overflow-x-auto">
+          <h2 id="feed-h" className="text-sm font-medium text-secondary mb-3">Recent requests</h2>
+          <div className="rounded-lg border border-border overflow-x-auto">
             <table className="w-full text-sm min-w-[640px]">
-              <thead className="bg-zinc-900/70 text-zinc-500 text-xs">
+              <thead className="bg-elevated text-muted-foreground text-xs">
                 <tr>
                   <th scope="col" className="text-left px-4 py-2 font-normal">#</th>
                   <th scope="col" className="text-left px-4 py-2 font-normal">Requester</th>
@@ -207,19 +207,19 @@ export default async function Home() {
               </thead>
               <tbody>
                 {d.requests.map((r) => (
-                  <tr key={String(r.id)} className="border-t border-zinc-800/70 align-top">
-                    <td className="px-4 py-2 text-zinc-300">{String(r.id)}</td>
+                  <tr key={String(r.id)} className="border-t border-border align-top">
+                    <td className="px-4 py-2 text-secondary">{String(r.id)}</td>
                     <td className="px-4 py-2 font-mono text-xs">
                       {ext(`${NET.explorer}/address/${r.requester}`, short(r.requester))}
                     </td>
-                    <td className="px-4 py-2 font-mono text-xs text-zinc-400">
+                    <td className="px-4 py-2 font-mono text-xs text-secondary">
                       {KNOWN_MODELS[r.modelId.toLowerCase()] ?? short(r.modelId)}
                     </td>
-                    <td className="px-4 py-2 text-zinc-400">{r.fee}</td>
+                    <td className="px-4 py-2 text-secondary">{r.fee}</td>
                     <td className="px-4 py-2">
                       <span className={
-                        r.status === "Fulfilled" ? "text-emerald-400" :
-                        r.status === "Pending" ? "text-amber-400" : "text-zinc-500"
+                        r.status === "Fulfilled" ? "text-success" :
+                        r.status === "Pending" ? "text-warning" : "text-muted-foreground"
                       }>
                         {r.status}
                       </span>
@@ -227,7 +227,7 @@ export default async function Home() {
                         <ResultModal requestId={r.id.toString()} result={r.result} />
                       )}
                     </td>
-                    <td className="px-4 py-2 text-zinc-500">{ago(r.ageSec)}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{ago(r.ageSec)}</td>
                     <td className="px-4 py-2 font-mono text-xs">
                       {ext(`${NET.explorer}/tx/${r.txHash}`, short(r.txHash))}
                     </td>
@@ -235,7 +235,7 @@ export default async function Home() {
                 ))}
                 {d.requests.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-zinc-600">
+                    <td colSpan={7} className="px-4 py-8 text-center text-steel">
                       No requests in the scanned window — the feed fills as Sentinel ticks land.
                     </td>
                   </tr>
@@ -246,15 +246,15 @@ export default async function Home() {
         </section>
 
         <div className="grid md:grid-cols-2 gap-4 mb-8">
-          <section aria-labelledby="integrate-h" className="rounded-lg border border-zinc-800 p-5">
-            <h2 id="integrate-h" className="text-sm font-medium text-zinc-400 mb-3">Use the oracle</h2>
-            <p className="text-xs text-zinc-500 mb-2">HTTP gateway — one call, on-chain round trip:</p>
-            <pre className="overflow-x-auto rounded bg-zinc-950 border border-zinc-800/70 p-3 text-xs text-zinc-300">{`curl -X POST http://localhost:8791/v1/query \\
+          <section aria-labelledby="integrate-h" className="rounded-lg border border-border p-5">
+            <h2 id="integrate-h" className="text-sm font-medium text-secondary mb-3">Use the oracle</h2>
+            <p className="text-xs text-muted-foreground mb-2">HTTP gateway — one call, on-chain round trip:</p>
+            <pre className="overflow-x-auto rounded bg-background border border-border p-3 text-xs text-secondary">{`curl -X POST http://localhost:8791/v1/query \\
   -H 'content-type: application/json' \\
   -H 'x-api-key: <issued-key>' \\
   -d '{"model":"echo:v1","prompt":"hello"}'`}</pre>
-            <p className="text-xs text-zinc-500 mt-3 mb-2">JS SDK:</p>
-            <pre className="overflow-x-auto rounded bg-zinc-950 border border-zinc-800/70 p-3 text-xs text-zinc-300">{`import { OracleClient } from "@bot-oracle/sdk";
+            <p className="text-xs text-muted-foreground mt-3 mb-2">JS SDK:</p>
+            <pre className="overflow-x-auto rounded bg-background border border-border p-3 text-xs text-secondary">{`import { OracleClient } from "@bot-oracle/sdk";
 const o = new OracleClient({ rpcUrl, chainId: 968, coordinator, models, signer });
 const value = await o.priceOf(OracleClient.modelId("echo:v1"));
 const { requestId } = await o.request({ modelId: OracleClient.modelId("echo:v1"), prompt: "hello", value });
@@ -262,27 +262,27 @@ await o.awaitResult(requestId);
 const text = await o.getResult(requestId);`}</pre>
           </section>
 
-          <section aria-labelledby="deploy-h" className="rounded-lg border border-zinc-800 p-5">
-            <h2 id="deploy-h" className="text-sm font-medium text-zinc-400 mb-3">
+          <section aria-labelledby="deploy-h" className="rounded-lg border border-border p-5">
+            <h2 id="deploy-h" className="text-sm font-medium text-secondary mb-3">
               Deployments — verified on explorer
             </h2>
             <ul className="space-y-2">
               {deployments.map((x) => (
                 <li key={x.addr} className="flex items-baseline justify-between gap-2 text-sm">
-                  <span className="text-zinc-400">{x.name}</span>
-                  {ext(`${NET.explorer}/address/${x.addr}`, short(x.addr), "font-mono text-xs text-sky-400 hover:underline")}
+                  <span className="text-secondary">{x.name}</span>
+                  {ext(`${NET.explorer}/address/${x.addr}`, short(x.addr), "font-mono text-xs text-secondary hover:underline")}
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-xs text-zinc-600">
+            <p className="mt-3 text-xs text-steel">
               Chain {NET.chainId} · all four core contracts source-verified on Blockscout.
             </p>
           </section>
         </div>
 
-        <footer className="text-xs text-zinc-600">
+        <footer className="text-xs text-steel">
           Server-rendered from {NET.rpc} · single trusted operator (v1) ·{" "}
-          {ext("https://github.com/DruxAMB/bot-oracle", "source ↗", "text-zinc-500 hover:underline")}
+          {ext("https://github.com/DruxAMB/bot-oracle", "source ↗", "text-muted-foreground hover:underline")}
         </footer>
         </div>
       </WalletProvider>

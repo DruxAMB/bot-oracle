@@ -152,15 +152,15 @@ export function WalletProvider({
 export function ConnectWalletButton() {
   const { status, address, balance, connect, switchChain } = useWallet();
   const btn =
-    "rounded-full px-3.5 py-1 text-xs font-medium focus-visible:outline-2 focus-visible:outline-sky-400";
+    "rounded-full px-3.5 py-1 text-xs font-medium focus-visible:outline-2 focus-visible:outline-primary";
 
   if (status === "ready") {
     return (
       <span
-        className="inline-flex items-center gap-2 rounded-full border border-sky-800 bg-sky-950/40 px-3 py-1 text-xs font-mono text-sky-300"
+        className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-mono text-foreground"
         title={`${address} · ${Number(formatEther(balance)).toFixed(4)} BOT`}
       >
-        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-success" />
         {short(address)}
       </span>
     );
@@ -171,7 +171,7 @@ export function ConnectWalletButton() {
         href="https://metamask.io/download/"
         target="_blank"
         rel="noopener noreferrer"
-        className={`${btn} border border-zinc-700 text-zinc-400 hover:text-zinc-200`}
+        className={`${btn} border border-border-strong text-secondary hover:text-foreground`}
       >
         Install wallet ↗
       </a>
@@ -179,7 +179,7 @@ export function ConnectWalletButton() {
   }
   if (status === "wrongChain") {
     return (
-      <button onClick={switchChain} className={`${btn} bg-amber-600 text-white hover:bg-amber-500`}>
+      <button onClick={switchChain} className={`${btn} bg-warning text-black hover:bg-warning/80`}>
         Wrong network — switch
       </button>
     );
@@ -188,9 +188,9 @@ export function ConnectWalletButton() {
     <button
       onClick={connect}
       disabled={status === "connecting"}
-      className={`${btn} bg-sky-600 text-white hover:bg-sky-500 disabled:opacity-50`}
+      className={`${btn} bg-primary text-primary-foreground hover:bg-primary-hover disabled:opacity-50`}
     >
-      {status === "connecting" ? "Connecting…" : "Connect wallet"}
+      {status === "connecting" ? "Connecting…" : "Connect wallet →"}
     </button>
   );
 }

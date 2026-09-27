@@ -11,6 +11,7 @@ import {
 import { useWallet } from "./Wallet";
 import Dialog, { DialogHeader } from "./Dialog";
 import Markdown from "./Markdown";
+import { ThinkingOrb } from "thinking-orbs";
 
 const COORD_ABI = [
   "function request(bytes32,bytes,address,uint64) payable returns (uint256)",
@@ -196,35 +197,35 @@ export default function Playground({
   return (
     <section
       aria-labelledby="play-h"
-      className="rounded-lg border border-sky-900/60 bg-sky-950/20 p-5 mb-8 flex flex-wrap items-center justify-between gap-3"
+      className="rounded-lg border border-border bg-card p-5 mb-8 flex flex-wrap items-center justify-between gap-3"
     >
-      <h2 id="play-h" className="text-sm font-medium text-sky-300">
+      <h2 id="play-h" className="text-sm font-medium text-foreground">
         Playground
       </h2>
       <div className="flex items-center gap-3">
         {phase.s === "pending" && (
-          <span role="status" className="text-xs text-amber-300">
+          <span role="status" className="text-xs text-warning">
             request #{phase.requestId} in flight…
           </span>
         )}
         <button
           onClick={() => setOpen(true)}
-          className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500 focus-visible:outline-2 focus-visible:outline-sky-400"
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-primary"
         >
-          Try the oracle
+          Try the oracle →
         </button>
       </div>
 
       {open && (
         <Dialog onClose={() => setOpen(false)} labelId="try-h">
           <DialogHeader id="try-h" title="Try the oracle" onClose={() => setOpen(false)} />
-          <p className="text-xs text-zinc-500 mb-4">
+          <p className="text-xs text-muted-foreground mb-4">
               A real on-chain request signed by your wallet — you pay tBOT, the operator runs the
               model, the answer is written back on-chain. Every query costs tBOT — including spam.
             </p>
 
             {wallet.status === "noWallet" && (
-              <p className="text-sm text-amber-300">
+              <p className="text-sm text-warning">
                 No EVM wallet found —{" "}
                 <a className="underline" href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer">
                   install MetaMask
@@ -237,18 +238,18 @@ export default function Playground({
               <button
                 onClick={wallet.connect}
                 disabled={wallet.status === "connecting"}
-                className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-sky-400"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-primary"
               >
-                {wallet.status === "connecting" ? "Connecting…" : "Connect wallet"}
+                {wallet.status === "connecting" ? "Connecting…" : "Connect wallet →"}
               </button>
             )}
 
             {wallet.status === "wrongChain" && (
               <div className="text-sm">
-                <p className="text-amber-300 mb-2">Wallet is on the wrong network.</p>
+                <p className="text-warning mb-2">Wallet is on the wrong network.</p>
                 <button
                   onClick={wallet.switchChain}
-                  className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
                 >
                   Switch to chain {chainId}
                 </button>
@@ -256,13 +257,13 @@ export default function Playground({
             )}
 
             {wallet.connectError && wallet.status !== "ready" && (
-              <p className="mt-2 text-xs text-red-400">{wallet.connectError}</p>
+              <p className="mt-2 text-xs text-danger">{wallet.connectError}</p>
             )}
 
             {wallet.status === "ready" && (
               <form onSubmit={(e) => { e.preventDefault(); if (!busy) send(); }} className="space-y-3">
                 <div className="flex flex-wrap items-center gap-3">
-                  <label htmlFor="pg-model" className="text-xs text-zinc-500">
+                  <label htmlFor="pg-model" className="text-xs text-muted-foreground">
                     Model
                   </label>
                   <select
@@ -270,7 +271,7 @@ export default function Playground({
                     value={modelIdx}
                     onChange={(e) => setModelIdx(Number(e.target.value))}
                     disabled={busy}
-                    className="rounded bg-zinc-950 border border-zinc-800 px-2 py-1.5 text-sm text-zinc-200 focus-visible:outline-2 focus-visible:outline-sky-400"
+                    className="rounded bg-background border border-border px-2 py-1.5 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-primary"
                   >
                     {models.map((m, i) => (
                       <option key={m.modelId} value={i}>
@@ -278,12 +279,12 @@ export default function Playground({
                       </option>
                     ))}
                   </select>
-                  <span className="text-xs text-zinc-600 font-mono">
+                  <span className="text-xs text-steel font-mono">
                     {short(wallet.address)} · {Number(formatEther(wallet.balance)).toFixed(3)} BOT
                   </span>
                 </div>
                 {model && modelHint(model.backend) && (
-                  <p className="text-xs text-zinc-600">{modelHint(model.backend)}</p>
+                  <p className="text-xs text-steel">{modelHint(model.backend)}</p>
                 )}
 
                 <div>
@@ -301,7 +302,7 @@ export default function Playground({
                     rows={3}
                     maxLength={500}
                     placeholder="Ask the oracle anything…"
-                    className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-2 text-base text-zinc-200 placeholder-zinc-600 focus-visible:outline-2 focus-visible:outline-sky-400"
+                    className="w-full rounded bg-background border border-border px-3 py-2 text-base text-foreground placeholder-steel focus-visible:outline-2 focus-visible:outline-primary"
                   />
                 </div>
 
@@ -309,16 +310,16 @@ export default function Playground({
                   <button
                     type="submit"
                     disabled={busy || !prompt.trim() || !model || insufficient}
-                    className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-sky-400"
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-primary"
                   >
                     {phase.s === "signing"
                       ? "Confirm in wallet…"
                       : phase.s === "pending"
                         ? "Waiting for fulfill…"
-                        : `Send query — ${model ? formatEther(BigInt(model.priceWei)) : "?"} BOT`}
+                        : `Send query — ${model ? formatEther(BigInt(model.priceWei)) : "?"} BOT →`}
                   </button>
                   {insufficient && (
-                    <span className="text-xs text-amber-400">
+                    <span className="text-xs text-warning">
                       Balance too low — get tBOT at{" "}
                       <a
                         className="underline"
@@ -336,17 +337,20 @@ export default function Playground({
 
             <div aria-live="polite" className="mt-3 text-sm">
               {phase.s === "pending" && (
-                <p className="text-amber-300">
-                  Request #{phase.requestId} submitted ·{" "}
-                  <a className="underline" href={`${explorer}/tx/${phase.txHash}`} target="_blank" rel="noopener noreferrer">
-                    tx ↗
-                  </a>{" "}
-                  — waiting for the operator…
+                <p className="flex items-center gap-2.5 text-warning">
+                  <ThinkingOrb state="working" size={20} theme="dark" />
+                  <span>
+                    Request #{phase.requestId} submitted ·{" "}
+                    <a className="underline" href={`${explorer}/tx/${phase.txHash}`} target="_blank" rel="noopener noreferrer">
+                      tx ↗
+                    </a>{" "}
+                    — operator is running inference…
+                  </span>
                 </p>
               )}
               {phase.s === "done" && (
                 <div>
-                  <p className="text-emerald-300 mb-1">
+                  <p className="text-foreground mb-1">
                     Request #{phase.requestId} fulfilled ·{" "}
                     <a className="underline" href={`${explorer}/tx/${phase.txHash}`} target="_blank" rel="noopener noreferrer">
                       request ↗
@@ -360,12 +364,12 @@ export default function Playground({
                       </>
                     )}
                   </p>
-                  <div className="rounded bg-zinc-950 border border-zinc-800/70 p-3">
+                  <div className="rounded bg-background border border-border p-3">
                     <Markdown>{phase.result}</Markdown>
                   </div>
                 </div>
               )}
-              {phase.s === "error" && <p className="text-red-400">{phase.message}</p>}
+              {phase.s === "error" && <p className="text-danger">{phase.message}</p>}
             </div>
         </Dialog>
       )}

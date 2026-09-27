@@ -19,7 +19,7 @@ export default function ResultModal({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-1 text-xs text-zinc-500 underline decoration-dotted underline-offset-2 hover:text-zinc-300 focus-visible:outline-2 focus-visible:outline-sky-400"
+        className="mt-1 text-xs text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary"
       >
         result
       </button>

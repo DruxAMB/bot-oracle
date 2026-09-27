@@ -47,7 +47,7 @@ export default function Dialog({
         aria-modal="true"
         aria-labelledby={labelId}
         tabIndex={-1}
-        className={`relative w-full ${wide ? "sm:max-w-2xl" : "sm:max-w-lg"} rounded-t-xl sm:rounded-xl border border-zinc-700 bg-zinc-900 p-5 shadow-2xl outline-none max-h-[90vh] overflow-y-auto`}
+        className={`relative w-full ${wide ? "sm:max-w-2xl" : "sm:max-w-lg"} rounded-t-xl sm:rounded-xl border border-border-strong bg-card p-5 outline-none max-h-[90vh] overflow-y-auto`}
       >
         {children}
       </div>
@@ -66,13 +66,13 @@ export function DialogHeader({
 }) {
   return (
     <div className="flex items-center justify-between mb-3">
-      <h2 id={id} className="text-sm font-medium text-sky-300">
+      <h2 id={id} className="text-sm font-medium text-foreground">
         {title}
       </h2>
       <button
         onClick={onClose}
         aria-label="Close dialog"
-        className="rounded p-1 text-zinc-500 hover:text-zinc-200 focus-visible:outline-2 focus-visible:outline-sky-400"
+        className="rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
           <path d="M1 1l12 12M13 1L1 13" />
