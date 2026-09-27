@@ -9,6 +9,9 @@ export const NET = {
   models: process.env.NEXT_PUBLIC_MODELS ?? "0xb208fb3016c14b0946bf3FBbe1Def28d72F63193",
   registry: process.env.NEXT_PUBLIC_REGISTRY ?? "0xf22dA276EAA3c4de433115a95111907A6338D3A5",
   sentinel: process.env.NEXT_PUBLIC_SENTINEL ?? "0x1ea8e8429Ecae0Dfa8dEbb93983DDe93EA31a014",
+  // Superseded v1 coordinator — read so the stats reflect total history,
+  // not just the current deployment.
+  legacyCoordinator: process.env.NEXT_PUBLIC_LEGACY_COORDINATOR ?? "0x7F7e5256cA568B981e1a09642d8F756D9c89F706",
 };
 
 const COORD_ABI = [
@@ -82,6 +85,9 @@ export type DashData = {
   sentinelMinInterval: number;
   sentinelLastTickAt: number;
   requests: RequestRow[];
+  legacyRequests: bigint;
+  legacyFulfilled: number;
+  legacyFeesWei: bigint;
   offline?: string;
 };
 
@@ -89,7 +95,7 @@ const EMPTY: DashData = {
   block: 0, totalRequests: 0n, fulfilled: 0, feesWei: 0n, operatorCount: 0n,
   minStake: 0n, models: [], operators: [], sentinelTicks: 0n, sentinelReport: "",
   sentinelReportAt: 0, sentinelBalance: 0n, sentinelMinInterval: 0, sentinelLastTickAt: 0,
-  requests: [],
+  requests: [], legacyRequests: 0n, legacyFulfilled: 0, legacyFeesWei: 0n,
 };
 
 export async function loadDash(): Promise<DashData> {
@@ -99,6 +105,7 @@ export async function loadDash(): Promise<DashData> {
     const reg = new Contract(NET.registry, REG_ABI, p);
     const sent = new Contract(NET.sentinel, SENT_ABI, p);
     const modelReg = new Contract(NET.models, MODELS_ABI, p);
+    const legacyCoord = new Contract(NET.legacyCoordinator, COORD_ABI, p);
 
     const [block, nextId, fees, ops, stake, ticks, report, reportAt, sentBal, sentInterval, sentLastTick] =
       await Promise.all([
@@ -114,6 +121,18 @@ export async function loadDash(): Promise<DashData> {
         sent.minInterval().catch(() => 0n),
         sent.lastTickAt().catch(() => 0n),
       ]);
+
+    // legacy v1 coordinator — its own counter/fees, additive to the totals
+    const [legacyNext, legacyFees] = await Promise.all([
+      legacyCoord.nextRequestId().catch(() => 1n),
+      legacyCoord.accruedProtocolFees().catch(() => 0n),
+    ]);
+    const legacyTotal = legacyNext - 1n;
+    const legacyFulfilled = await Promise.all(
+      Array.from({ length: Math.min(Number(legacyTotal), 500) }, (_, i) =>
+        legacyCoord.requests(i + 1).then((r) => Number(r.status))
+      )
+    ).then((ss) => ss.filter((s) => s === 1 || s === 4).length);
 
     const from = Math.max(0, block - 50_000);
     const [sentLogs, fulfilledLogs, modelLogs] = await Promise.all([
@@ -190,6 +209,9 @@ export async function loadDash(): Promise<DashData> {
       sentinelMinInterval: Number(sentInterval),
       sentinelLastTickAt: Number(sentLastTick),
       requests: rows,
+      legacyRequests: legacyTotal,
+      legacyFulfilled,
+      legacyFeesWei: legacyFees,
     };
   } catch (e) {
     return { ...EMPTY, offline: e instanceof Error ? e.message.slice(0, 160) : "rpc unreachable" };

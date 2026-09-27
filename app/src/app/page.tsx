@@ -35,11 +35,19 @@ export default async function Home() {
     : null;
 
   const stats = [
-    { label: "Requests served", value: String(d.totalRequests) },
-    { label: "Fulfilled", value: String(d.fulfilled) },
-    { label: "Protocol fees", value: `${Number(formatEther(d.feesWei)).toFixed(4)} BOT` },
-    { label: "Operators", value: String(d.operatorCount) },
-    { label: "Min stake", value: `${formatEther(d.minStake)} BOT` },
+    {
+      label: "Requests served",
+      value: String(d.totalRequests + d.legacyRequests),
+      sub: `${d.totalRequests} on v2 · ${d.legacyRequests} on v1`,
+    },
+    { label: "Fulfilled", value: String(d.fulfilled + d.legacyFulfilled), sub: "" },
+    {
+      label: "Protocol fees",
+      value: `${Number(formatEther(d.feesWei + d.legacyFeesWei)).toFixed(4)} BOT`,
+      sub: "across v1 + v2",
+    },
+    { label: "Operators", value: String(d.operatorCount), sub: "" },
+    { label: "Min stake", value: `${formatEther(d.minStake)} BOT`, sub: "" },
   ];
 
   const deployments = [
@@ -47,6 +55,7 @@ export default async function Home() {
     { name: "ModelRegistry", addr: NET.models },
     { name: "OperatorRegistry", addr: NET.registry },
     { name: "Sentinel (consumer)", addr: NET.sentinel },
+    { name: "OracleCoordinator v1 (superseded)", addr: NET.legacyCoordinator },
   ];
 
   return (
@@ -87,6 +96,7 @@ export default async function Home() {
             <div key={s.label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
               <div className="text-xs text-zinc-500 mb-1">{s.label}</div>
               <div className="text-xl font-medium text-white">{s.value}</div>
+              {s.sub && <div className="text-[11px] text-zinc-600 mt-0.5">{s.sub}</div>}
             </div>
           ))}
         </section>
