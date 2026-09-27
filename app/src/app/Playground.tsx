@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BrowserProvider,
   JsonRpcProvider,
@@ -9,6 +9,8 @@ import {
   formatEther,
 } from "ethers";
 import { useWallet } from "./Wallet";
+import Dialog, { DialogHeader } from "./Dialog";
+import Markdown from "./Markdown";
 
 const COORD_ABI = [
   "function request(bytes32,bytes,address,uint64) payable returns (uint256)",
@@ -54,7 +56,6 @@ export default function Playground({
   const [phase, setPhase] = useState<Phase>({ s: "idle" });
   const [modelIdx, setModelIdx] = useState(0);
   const [prompt, setPrompt] = useState("");
-  const dialogRef = useRef<HTMLDivElement>(null);
 
   const model = models[modelIdx];
   const busy = phase.s === "signing" || phase.s === "pending";
@@ -130,24 +131,6 @@ export default function Playground({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Modal a11y: Escape closes, focus moves in and returns, body scroll locked.
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.activeElement as HTMLElement | null;
-    dialogRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-      prev?.focus?.();
-    };
-  }, [open]);
-
   async function send() {
     if (!model || !prompt.trim()) return;
     setPhase({ s: "signing" });
@@ -216,35 +199,9 @@ export default function Playground({
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
-          <div
-            className="absolute inset-0 bg-black/70"
-            aria-hidden
-            onClick={() => setOpen(false)}
-          />
-          <div
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="try-h"
-            tabIndex={-1}
-            className="relative w-full sm:max-w-lg rounded-t-xl sm:rounded-xl border border-zinc-700 bg-zinc-900 p-5 shadow-2xl outline-none max-h-[90vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h2 id="try-h" className="text-sm font-medium text-sky-300">
-                Try the oracle
-              </h2>
-              <button
-                onClick={() => setOpen(false)}
-                aria-label="Close dialog"
-                className="rounded p-1 text-zinc-500 hover:text-zinc-200 focus-visible:outline-2 focus-visible:outline-sky-400"
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <path d="M1 1l12 12M13 1L1 13" />
-                </svg>
-              </button>
-            </div>
-            <p className="text-xs text-zinc-500 mb-4">
+        <Dialog onClose={() => setOpen(false)} labelId="try-h">
+          <DialogHeader id="try-h" title="Try the oracle" onClose={() => setOpen(false)} />
+          <p className="text-xs text-zinc-500 mb-4">
               A real on-chain request signed by your wallet — you pay tBOT, the operator runs the
               model, the answer is written back on-chain. Every query costs tBOT — including spam.
             </p>
@@ -386,15 +343,14 @@ export default function Playground({
                       </>
                     )}
                   </p>
-                  <p className="whitespace-pre-wrap rounded bg-zinc-950 border border-zinc-800/70 p-3 text-zinc-200">
-                    {phase.result}
-                  </p>
+                  <div className="rounded bg-zinc-950 border border-zinc-800/70 p-3">
+                    <Markdown>{phase.result}</Markdown>
+                  </div>
                 </div>
               )}
               {phase.s === "error" && <p className="text-red-400">{phase.message}</p>}
             </div>
-          </div>
-        </div>
+        </Dialog>
       )}
     </section>
   );

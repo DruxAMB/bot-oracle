@@ -3,6 +3,8 @@ import { formatEther, id } from "ethers";
 import Playground from "./Playground";
 import AutoRefresh from "./AutoRefresh";
 import { WalletProvider, ConnectWalletButton } from "./Wallet";
+import Markdown from "./Markdown";
+import ResultModal from "./ResultModal";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -101,9 +103,13 @@ export default async function Home() {
               balance {Number(formatEther(d.sentinelBalance)).toFixed(3)} BOT
             </span>
           </div>
-          <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">
-            {d.sentinelReport || "Awaiting first report — Sentinel ticks every " + Math.round(d.sentinelMinInterval / 60) + " minutes and stores each result here."}
-          </p>
+          {d.sentinelReport ? (
+            <Markdown>{d.sentinelReport}</Markdown>
+          ) : (
+            <p className="text-zinc-300 text-sm leading-relaxed">
+              {"Awaiting first report — Sentinel ticks every " + Math.round(d.sentinelMinInterval / 60) + " minutes and stores each result here."}
+            </p>
+          )}
           <p className="mt-3 text-xs text-zinc-600">
             Every cycle is a paid oracle request — the product generates its own on-chain demand.{" "}
             {ext(`${NET.explorer}/address/${NET.sentinel}`, "contract ↗")}
@@ -208,14 +214,7 @@ export default async function Home() {
                         {r.status}
                       </span>
                       {r.result && (
-                        <details className="mt-1">
-                          <summary className="cursor-pointer text-xs text-zinc-500 hover:text-zinc-300">
-                            result
-                          </summary>
-                          <p className="mt-1 max-w-md whitespace-pre-wrap text-xs text-zinc-400">
-                            {r.result.slice(0, 400)}
-                          </p>
-                        </details>
+                        <ResultModal requestId={r.id.toString()} result={r.result} />
                       )}
                     </td>
                     <td className="px-4 py-2 text-zinc-500">{ago(r.ageSec)}</td>

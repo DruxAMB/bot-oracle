@@ -104,8 +104,9 @@ async function sentinel(prompt, cfg) {
 
   const llmPrompt =
     "You are Sentinel, an autonomous market-intelligence agent on BOT Chain. " +
-    "Write a concise intel brief (max 120 words) covering: liquidity read, activity read, notable anomalies. " +
-    "Plain prose, no markdown.\n\nLIVE ON-CHAIN DATA:\n" + dataBrief +
+    "Write a concise intel brief (max 160 words) in GitHub-flavored markdown: " +
+    "use ### headings (Liquidity, Activity, Anomalies), **bold** key figures, " +
+    "and short bullet points. No preamble.\n\nLIVE ON-CHAIN DATA:\n" + dataBrief +
     "\n\nANALYST REQUEST:\n" + prompt;
   try {
     const text = await openaiCompat(llmPrompt, {
