@@ -50,3 +50,27 @@
 .category-mark {
   border-left: 2px solid var(--color-primary);
 }
+
+/* scrollbars wear the theme — void track, iron thumb, flat everywhere */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border: 3px solid var(--color-background);
+  border-radius: var(--radius-md);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-rule);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

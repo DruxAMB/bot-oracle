@@ -152,7 +152,7 @@ export function WalletProvider({
 export function ConnectWalletButton() {
   const { status, address, balance, connect, switchChain } = useWallet();
   const btn =
-    "rounded-full px-3.5 py-1 text-xs font-medium focus-visible:outline-2 focus-visible:outline-primary";
+    "rounded-lg px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary";
 
   if (status === "ready") {
     return (
