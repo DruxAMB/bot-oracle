@@ -12,7 +12,8 @@ import {
 
 const COORD_ABI = [
   "function request(bytes32,bytes,address,uint64) payable returns (uint256)",
-  "function requests(uint256) view returns (address,bytes32,bytes32,uint256,address,uint64,uint64,uint64,uint8,bytes32,address,address)",
+  "function requests(uint256) view returns (address requester, bytes32 modelId, bytes32 inputHash, uint256 fee, address callbackContract, uint64 callbackGasLimit, uint64 createdAt, uint64 fulfilledAt, uint8 status, bytes32 outputHash, address operator, address challenger)",
+  "event RequestSent(uint256 indexed requestId, address indexed requester, bytes32 indexed modelId, bytes32 inputHash, bytes input, address callbackContract)",
   "event RequestFulfilled(uint256 indexed requestId, address indexed operator, bytes32 outputHash, bytes output)",
 ];
 const abi = AbiCoder.defaultAbiCoder();
@@ -120,6 +121,9 @@ export default function Playground({
         value: BigInt(model.priceWei),
       });
       const receipt = await tx.wait();
+      if (!receipt || receipt.status === 0) {
+        throw new Error("transaction reverted — check the tx on the explorer for the reason");
+      }
       const reqLog = receipt.logs
         .map((l: any) => { try { return coord.interface.parseLog(l); } catch { return null; } })
         .find((x: any) => x?.name === "RequestSent");
