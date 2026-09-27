@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BrowserProvider,
   JsonRpcProvider,
@@ -56,6 +56,7 @@ export default function Playground({
   const [phase, setPhase] = useState<Phase>({ s: "idle" });
   const [modelIdx, setModelIdx] = useState(0);
   const [prompt, setPrompt] = useState("");
+  const pollGen = useRef(0);
 
   const model = models[modelIdx];
   const busy = phase.s === "signing" || phase.s === "pending";
@@ -63,11 +64,15 @@ export default function Playground({
     wallet.status === "ready" && !!model && wallet.balance < BigInt(model.priceWei);
 
   async function pollResult(requestId: string, txHash: string, fromBlock: number) {
+    // Generation guard: a superseded poll (stale resume, or a newer send)
+    // must not write phase or touch pg-pending.
+    const gen = ++pollGen.current;
     const reader = new JsonRpcProvider(rpc, chainId);
     const ro = new Contract(coordinator, COORD_ABI, reader);
     const deadline = Date.now() + 180_000;
     while (Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 3000));
+      if (gen !== pollGen.current) return;
       try {
         const r = await ro.requests(requestId);
         const status = Number(r.status);
@@ -90,12 +95,14 @@ export default function Playground({
               [result] = abi.decode(["string"], output);
             } catch {}
           }
+          if (gen !== pollGen.current) return;
           localStorage.removeItem("pg-pending");
           setPhase({ s: "done", requestId, txHash, fulfillTx, result });
           wallet.refresh();
           return;
         }
         if (status === 2 || status === 3) {
+          if (gen !== pollGen.current) return;
           localStorage.removeItem("pg-pending");
           throw new Error(`request ended: status ${status}`);
         }
@@ -104,6 +111,7 @@ export default function Playground({
         // transient RPC hiccup — keep polling
       }
     }
+    if (gen !== pollGen.current) return;
     localStorage.removeItem("pg-pending");
     setPhase({
       s: "error",
@@ -136,6 +144,13 @@ export default function Playground({
     setPhase({ s: "signing" });
     try {
       const bp = new BrowserProvider((window as any).ethereum);
+      // Re-check chain at send time — the user may have switched networks
+      // after connecting; broadcasting there would pay on the wrong chain.
+      const net = await bp.getNetwork();
+      if (Number(net.chainId) !== chainId) {
+        wallet.refresh();
+        throw new Error("wallet is on the wrong network — switch back and retry");
+      }
       const signer = await bp.getSigner();
       const coord = new Contract(coordinator, COORD_ABI, signer);
       const input = abi.encode(["string"], [prompt.trim()]);
@@ -168,7 +183,9 @@ export default function Playground({
       );
       await pollResult(requestId, tx.hash, receipt.blockNumber);
     } catch (e: any) {
+      if (e?.message?.startsWith("request ended")) pollGen.current++;
       localStorage.removeItem("pg-pending");
+      wallet.refresh();
       setPhase({
         s: "error",
         message: e?.shortMessage ?? e?.info?.error?.message ?? e?.message ?? "request failed",
@@ -186,7 +203,7 @@ export default function Playground({
       </h2>
       <div className="flex items-center gap-3">
         {phase.s === "pending" && (
-          <span className="text-xs text-amber-300">
+          <span role="status" className="text-xs text-amber-300">
             request #{phase.requestId} in flight…
           </span>
         )}

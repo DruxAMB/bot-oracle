@@ -22,7 +22,11 @@ export default function Dialog({
     const prev = document.activeElement as HTMLElement | null;
     ref.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      // Only the topmost dialog responds — prevents one Escape from
+      // closing stacked modals at once.
+      if (e.key !== "Escape") return;
+      const dialogs = document.querySelectorAll('[role="dialog"]');
+      if (dialogs[dialogs.length - 1] === ref.current) onClose();
     };
     document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;

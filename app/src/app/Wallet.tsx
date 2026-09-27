@@ -165,6 +165,18 @@ export function ConnectWalletButton() {
       </span>
     );
   }
+  if (status === "noWallet") {
+    return (
+      <a
+        href="https://metamask.io/download/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${btn} border border-zinc-700 text-zinc-400 hover:text-zinc-200`}
+      >
+        Install wallet ↗
+      </a>
+    );
+  }
   if (status === "wrongChain") {
     return (
       <button onClick={switchChain} className={`${btn} bg-amber-600 text-white hover:bg-amber-500`}>
