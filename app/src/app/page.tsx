@@ -2,6 +2,7 @@ import { loadDash, NET } from "@/lib/chain";
 import { formatEther, id } from "ethers";
 import Playground from "./Playground";
 import AutoRefresh from "./AutoRefresh";
+import { WalletProvider, ConnectWalletButton } from "./Wallet";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -49,26 +50,35 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-surface text-zinc-200 font-sans">
       <AutoRefresh intervalMs={60_000} />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        <header className="mb-8 flex flex-wrap items-center gap-3 justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-white">bot-oracle</h1>
-            <p className="text-sm text-zinc-500">
-              AI compute oracle · {NET.name} · block {d.block || "—"}
-            </p>
-          </div>
-          {d.offline ? (
-            <span className="inline-flex items-center gap-2 rounded-full border border-amber-800 bg-amber-950/40 px-3 py-1 text-xs text-amber-300">
-              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-              RPC offline — {d.offline}
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-800 bg-emerald-950/40 px-3 py-1 text-xs text-emerald-300">
-              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              live · refreshes every 60s
-            </span>
-          )}
-        </header>
+      <WalletProvider
+        chainId={NET.chainId}
+        chainName={NET.name}
+        rpc={NET.rpc}
+        explorer={NET.explorer}
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+          <header className="mb-8 flex flex-wrap items-center gap-3 justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-white">bot-oracle</h1>
+              <p className="text-sm text-zinc-500">
+                AI compute oracle · {NET.name} · block {d.block || "—"}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {d.offline ? (
+                <span className="inline-flex items-center gap-2 rounded-full border border-amber-800 bg-amber-950/40 px-3 py-1 text-xs text-amber-300">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                  RPC offline — {d.offline}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-800 bg-emerald-950/40 px-3 py-1 text-xs text-emerald-300">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  live · refreshes every 60s
+                </span>
+              )}
+              <ConnectWalletButton />
+            </div>
+          </header>
 
         <section aria-label="network stats" className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           {stats.map((s) => (
@@ -265,7 +275,8 @@ const text = await o.getResult(requestId);`}</pre>
           Server-rendered from {NET.rpc} · single trusted operator (v1) ·{" "}
           {ext("https://github.com/DruxAMB/bot-oracle", "source ↗", "text-zinc-500 hover:underline")}
         </footer>
-      </div>
+        </div>
+      </WalletProvider>
     </main>
   );
 }
