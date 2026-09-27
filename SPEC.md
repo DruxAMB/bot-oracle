@@ -294,6 +294,13 @@ configured OpenAI-compatible LLM when `OPENAI_API_KEY` is set, else emits a
 labeled deterministic report (no fake inference). Node runs detached via
 `node --env-file=.env.testnet src/index.js` (env gitignored).
 
+**Live LLM inference (testnet, 2026-09-27):** Qwen `qwen3.8-max` via the
+Bitget hackathon OpenAI-compatible endpoint (`hackathon.bitgetops.com/v1`;
+key in `node/.env.testnet`, never committed). Request #28 fulfill tx
+`0x48dff9d7…` — `latestReport` is a model-written brief over the live
+snapshot (BDEX one-sided pool, gas, oracle stats). Report prefix
+`[sentinel:qwen3.8-max]` makes the serving model auditable on-chain.
+
 **Phase 1 — Core protocol (testnet)**
 Coordinator + registry + model registry + consumer interface; oracle-node with
 WSS + poll paths; one local model + one passthrough; Foundry/Hardhat tests
