@@ -141,7 +141,7 @@ export default async function Home() {
         />
 
         <div className="grid md:grid-cols-2 gap-4 mb-8">
-          <section aria-labelledby="models-h" className="rounded-lg border border-border p-5">
+          <section aria-labelledby="models-h" className="min-w-0 rounded-lg border border-border p-5">
             <h2 id="models-h" className="text-sm font-medium text-secondary mb-3">Models</h2>
             {d.models.length === 0 ? (
               <p className="text-sm text-steel">No models registered.</p>
@@ -166,7 +166,7 @@ export default async function Home() {
             )}
           </section>
 
-          <section aria-labelledby="ops-h" className="rounded-lg border border-border p-5">
+          <section aria-labelledby="ops-h" className="min-w-0 rounded-lg border border-border p-5">
             <h2 id="ops-h" className="text-sm font-medium text-secondary mb-3">Operators</h2>
             {d.operators.length === 0 ? (
               <p className="text-sm text-steel">No operators registered.</p>
@@ -246,7 +246,7 @@ export default async function Home() {
         </section>
 
         <div className="grid md:grid-cols-2 gap-4 mb-8">
-          <section aria-labelledby="integrate-h" className="rounded-lg border border-border p-5">
+          <section aria-labelledby="integrate-h" className="min-w-0 rounded-lg border border-border p-5">
             <h2 id="integrate-h" className="text-sm font-medium text-secondary mb-3">Use the oracle</h2>
             <p className="text-xs text-muted-foreground mb-2">HTTP gateway — one call, on-chain round trip:</p>
             <pre className="overflow-x-auto rounded bg-background border border-border p-3 text-xs text-secondary">{`curl -X POST http://localhost:8791/v1/query \\
@@ -262,7 +262,7 @@ await o.awaitResult(requestId);
 const text = await o.getResult(requestId);`}</pre>
           </section>
 
-          <section aria-labelledby="deploy-h" className="rounded-lg border border-border p-5">
+          <section aria-labelledby="deploy-h" className="min-w-0 rounded-lg border border-border p-5">
             <h2 id="deploy-h" className="text-sm font-medium text-secondary mb-3">
               Deployments — verified on explorer
             </h2>
