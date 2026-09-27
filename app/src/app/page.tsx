@@ -216,7 +216,8 @@ export default async function Home() {
             <p className="text-xs text-zinc-500 mb-2">HTTP gateway — one call, on-chain round trip:</p>
             <pre className="overflow-x-auto rounded bg-zinc-950 border border-zinc-800/70 p-3 text-xs text-zinc-300">{`curl -X POST http://localhost:8791/v1/query \\
   -H 'content-type: application/json' \\
-  -d '{"model":"echo:v1","input":"hello"}'`}</pre>
+  -H 'x-api-key: <issued-key>' \\
+  -d '{"model":"echo:v1","prompt":"hello"}'`}</pre>
             <p className="text-xs text-zinc-500 mt-3 mb-2">JS SDK:</p>
             <pre className="overflow-x-auto rounded bg-zinc-950 border border-zinc-800/70 p-3 text-xs text-zinc-300">{`import { BotOracle } from "@bot-oracle/sdk";
 const o = new BotOracle({ rpc, coordinator, signer });
