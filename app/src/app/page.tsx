@@ -1,5 +1,6 @@
 import { loadDash, NET } from "@/lib/chain";
 import { formatEther, id } from "ethers";
+import Playground from "./Playground";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -19,7 +20,7 @@ const ext = (href: string, text: string, className = "text-sky-400 hover:underli
 
 // modelIds are keccak256(label); label any conventionally-named model
 const KNOWN_MODELS: Record<string, string> = Object.fromEntries(
-  ["echo:v1", "sentinel:v1", "openai:gpt-4o-mini"].map((l) => [id(l).toLowerCase(), l])
+  ["echo:v1", "sentinel:v1", "gpt-4o-mini:v1"].map((l) => [id(l).toLowerCase(), l])
 );
 
 export default async function Home() {
@@ -97,6 +98,20 @@ export default async function Home() {
             {ext(`${NET.explorer}/address/${NET.sentinel}`, "contract ↗")}
           </p>
         </section>
+
+        <Playground
+          coordinator={NET.coordinator}
+          chainId={NET.chainId}
+          rpc={NET.rpc}
+          explorer={NET.explorer}
+          models={d.models.filter((m) => m.active).map((m) => ({
+            modelId: m.modelId,
+            label: KNOWN_MODELS[m.modelId.toLowerCase()] ?? short(m.modelId),
+            backend: m.backend,
+            priceWei: m.priceWei.toString(),
+            active: m.active,
+          }))}
+        />
 
         <div className="grid md:grid-cols-2 gap-4 mb-8">
           <section aria-labelledby="models-h" className="rounded-lg border border-zinc-800 p-5">
