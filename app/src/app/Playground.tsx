@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BrowserProvider,
   JsonRpcProvider,
@@ -49,6 +49,96 @@ export default function Playground({
   const [signerAddr, setSignerAddr] = useState("");
 
   const model = models[modelIdx];
+
+  async function pollResult(requestId: string, txHash: string, fromBlock: number) {
+    const reader = new JsonRpcProvider(rpc, chainId);
+    const ro = new Contract(coordinator, COORD_ABI, reader);
+    const deadline = Date.now() + 180_000;
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 3000));
+      try {
+        const r = await ro.requests(requestId);
+        const status = Number(r.status);
+        if (status === 1 || status === 4) {
+          const logs = await reader.getLogs({
+            address: coordinator,
+            topics: [ro.interface.getEvent("RequestFulfilled")!.topicHash, "0x" + BigInt(requestId).toString(16).padStart(64, "0")],
+            fromBlock: Math.max(0, fromBlock - 5),
+            toBlock: "latest",
+          });
+          let result = "(fulfilled — output not decodable)";
+          let fulfillTx: string | undefined;
+          if (logs[0]) {
+            fulfillTx = logs[0].transactionHash;
+            try {
+              const [, output] = abi.decode(["bytes32", "bytes"], logs[0].data);
+              [result] = abi.decode(["string"], output);
+            } catch {}
+          }
+          localStorage.removeItem("pg-pending");
+          setPhase({ s: "done", requestId, txHash, fulfillTx, result });
+          return;
+        }
+        if (status === 2 || status === 3) {
+          localStorage.removeItem("pg-pending");
+          throw new Error(`request ended: status ${status}`);
+        }
+      } catch (e: any) {
+        if (e?.message?.startsWith("request ended")) throw e;
+        // transient RPC hiccup — keep polling
+      }
+    }
+    localStorage.removeItem("pg-pending");
+    setPhase({ s: "error", message: `Request #${requestId} still pending after 180s — check the explorer.` });
+  }
+
+  // Silent reconnect + resume an in-flight request across page refreshes.
+  useEffect(() => {
+    const draft = sessionStorage.getItem("pg-prompt");
+    if (draft) setPrompt(draft);
+    const eth = (window as any).ethereum;
+    if (!eth) return;
+
+    const onAccounts = (accs: string[]) => {
+      if (!accs.length) { setSignerAddr(""); setPhase({ s: "idle" }); return; }
+      if (accs[0] !== signerAddr) { setSignerAddr(accs[0]); connect(); }
+    };
+    const onChain = () => connect(); // re-derive phase; wrongChain covers mismatch
+    eth.on?.("accountsChanged", onAccounts);
+    eth.on?.("chainChanged", onChain);
+
+    (async () => {
+      try {
+        const [accounts, cid] = await Promise.all([
+          eth.request({ method: "eth_accounts" }),
+          eth.request({ method: "eth_chainId" }),
+        ]);
+        if (!accounts?.length) return;
+        if (Number(BigInt(cid)) !== chainId) { setPhase({ s: "wrongChain" }); return; }
+        const bp = new BrowserProvider(eth);
+        const balance = await bp.getBalance(accounts[0]);
+        setSignerAddr(accounts[0]);
+        setPhase({ s: "ready", address: accounts[0], balance });
+
+        const pending = localStorage.getItem("pg-pending");
+        if (pending) {
+          try {
+            const { requestId, txHash, block } = JSON.parse(pending);
+            setPhase({ s: "pending", requestId, txHash });
+            pollResult(requestId, txHash, block ?? 0).catch((e) =>
+              setPhase({ s: "error", message: e?.message ?? "poll failed" })
+            );
+          } catch { localStorage.removeItem("pg-pending"); }
+        }
+      } catch {}
+    })();
+
+    return () => {
+      eth.removeListener?.("accountsChanged", onAccounts);
+      eth.removeListener?.("chainChanged", onChain);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function connect() {
     setPhase({ s: "connecting" });
@@ -130,37 +220,8 @@ export default function Playground({
       const requestId = reqLog?.args?.requestId?.toString();
       if (!requestId) throw new Error("requestId missing from receipt");
       setPhase({ s: "pending", requestId, txHash: tx.hash });
-
-      // poll for fulfillment
-      const reader = new JsonRpcProvider(rpc, chainId);
-      const ro = new Contract(coordinator, COORD_ABI, reader);
-      const deadline = Date.now() + 120_000;
-      while (Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 3000));
-        const r = await ro.requests(requestId);
-        const status = Number(r.status);
-        if (status === 1 || status === 4) {
-          const logs = await reader.getLogs({
-            address: coordinator,
-            topics: [ro.interface.getEvent("RequestFulfilled")!.topicHash, "0x" + BigInt(requestId).toString(16).padStart(64, "0")],
-            fromBlock: Math.max(0, receipt.blockNumber - 5),
-            toBlock: "latest",
-          });
-          let result = "(fulfilled — output not decodable)";
-          let fulfillTx: string | undefined;
-          if (logs[0]) {
-            fulfillTx = logs[0].transactionHash;
-            try {
-              const [, output] = abi.decode(["bytes32", "bytes"], logs[0].data);
-              [result] = abi.decode(["string"], output);
-            } catch {}
-          }
-          setPhase({ s: "done", requestId, txHash: tx.hash, fulfillTx, result });
-          return;
-        }
-        if (status === 2 || status === 3) throw new Error(`request ended: status ${status}`);
-      }
-      setPhase({ s: "error", message: `Request #${requestId} still pending after 120s — check the explorer.` });
+      localStorage.setItem("pg-pending", JSON.stringify({ requestId, txHash: tx.hash, block: receipt.blockNumber }));
+      await pollResult(requestId, tx.hash, receipt.blockNumber);
     } catch (e: any) {
       setPhase({ s: "error", message: e?.shortMessage ?? e?.info?.error?.message ?? e?.message ?? "request failed" });
     }
@@ -224,7 +285,7 @@ export default function Playground({
             <textarea
               id="pg-prompt"
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => { setPrompt(e.target.value); sessionStorage.setItem("pg-prompt", e.target.value); }}
               disabled={busy}
               rows={2}
               maxLength={500}

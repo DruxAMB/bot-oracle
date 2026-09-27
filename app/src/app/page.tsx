@@ -1,6 +1,7 @@
 import { loadDash, NET } from "@/lib/chain";
 import { formatEther, id } from "ethers";
 import Playground from "./Playground";
+import AutoRefresh from "./AutoRefresh";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -47,7 +48,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-surface text-zinc-200 font-sans">
-      <meta httpEquiv="refresh" content="60" />
+      <AutoRefresh intervalMs={60_000} />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <header className="mb-8 flex flex-wrap items-center gap-3 justify-between">
           <div>
