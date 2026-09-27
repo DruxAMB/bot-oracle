@@ -1,7 +1,10 @@
 // Model backends. v1 is passthrough-first per spec: hosted LLM APIs behind a
 // small interface. "echo" exists so the full pipeline is testable with no keys.
+// "sentinel:" is the flagship intel backend — it reads live chain state, builds
+// a data-bearing prompt, and calls the configured LLM. With no key configured
+// it emits a deterministic data report (labeled) instead of faking inference.
 
-import { getBytes } from "ethers";
+import { getBytes, Contract, formatEther, formatUnits } from "ethers";
 
 const DECODER = new TextDecoder();
 
@@ -24,6 +27,89 @@ function parsePrompt(rawInput) {
 
 async function echo(prompt) {
   return `echo:${prompt}`;
+}
+
+// --- sentinel: live on-chain data → LLM brief -------------------------------
+// Env-configured data sources; defaults are the public testnet deployment.
+const BDEX = {
+  factory: process.env.BDEX_FACTORY ?? "0x65b8e98ceA190d8c28B3e4716402027f634d15a3",
+  wbot: process.env.BDEX_WBOT ?? "0xD5452816194a3784dBa983426cCe7c122F4abd30",
+  usdt: process.env.BDEX_USDT ?? "0x75edC9335175Fc0552D51D48439F229c10420fe3",
+};
+const FACTORY_ABI = ["function getPair(address,address) view returns (address)"];
+const PAIR_ABI = ["function getReserves() view returns (uint112,uint112,uint32)", "function token0() view returns (address)"];
+
+async function chainSnapshot(cfg) {
+  const p = cfg.provider;
+  const coord = new Contract(cfg.coordinator, [
+    "function nextRequestId() view returns (uint256)",
+    "function accruedProtocolFees() view returns (uint256)",
+  ], p);
+  const snap = { ok: {} };
+  const [block, gasPrice, nextId, fees] = await Promise.all([
+    p.getBlockNumber(), p.getGasPrice?.() ?? p.getFeeData().then(f => f.gasPrice),
+    coord.nextRequestId(), coord.accruedProtocolFees(),
+  ]);
+  snap.block = Number(block);
+  snap.gasGwei = formatUnits(gasPrice ?? 0n, "gwei");
+  snap.requests = Number(nextId - 1n);
+  snap.feesBot = formatEther(fees);
+
+  // BDEX reserves — best-effort; pair may not exist yet on a fresh deployment
+  try {
+    const factory = new Contract(BDEX.factory, FACTORY_ABI, p);
+    const pairAddr = await factory.getPair(BDEX.wbot, BDEX.usdt);
+    if (pairAddr !== "0x0000000000000000000000000000000000000000") {
+      const pair = new Contract(pairAddr, PAIR_ABI, p);
+      const [r0, r1] = await pair.getReserves();
+      const t0 = (await pair.token0()).toLowerCase();
+      const [wbotR, usdtR] = t0 === BDEX.wbot.toLowerCase() ? [r0, r1] : [r1, r0];
+      const wbot = Number(formatEther(wbotR));
+      const usdt = Number(formatEther(usdtR)); // testnet USDT is 18dec stand-in
+      snap.pair = { wbot, usdt, price: wbot > 0 ? usdt / wbot : 0 };
+    }
+  } catch (e) {
+    snap.pairError = e.message?.slice(0, 120);
+  }
+  return snap;
+}
+
+function deterministicReport(prompt, s) {
+  const liq = s.pair
+    ? `WBOT/USDT pool holds ${s.pair.usdt.toFixed(2)} USDT vs ${s.pair.wbot.toFixed(1)} WBOT (implied ~$${s.pair.price.toFixed(2)}).`
+    : `BDEX WBOT/USDT pair unreadable (${s.pairError ?? "no pair"}).`;
+  return [
+    `[sentinel:data — deterministic, no LLM key configured]`,
+    `Block ${s.block}. Gas ${Number(s.gasGwei).toFixed(1)} gwei. ${liq}`,
+    `Oracle: ${s.requests} requests served, ${Number(s.feesBot).toFixed(4)} BOT accrued in protocol fees.`,
+    `Prompt on record: ${prompt.slice(0, 140)}`,
+  ].join(" ");
+}
+
+async function sentinel(prompt, cfg) {
+  const s = await chainSnapshot(cfg);
+  const dataBrief = [
+    `BOT Chain chainId ${cfg.chainId} snapshot @ block ${s.block}:`,
+    s.pair
+      ? `- BDEX WBOT/USDT: ${s.pair.usdt.toFixed(2)} USDT / ${s.pair.wbot.toFixed(1)} WBOT, implied price $${s.pair.price.toFixed(2)}`
+      : `- BDEX WBOT/USDT pair: unavailable (${s.pairError ?? "none"})`,
+    `- gas price: ${Number(s.gasGwei).toFixed(1)} gwei`,
+    `- bot-oracle: ${s.requests} requests served, ${s.feesBot} BOT accrued fees`,
+  ].join("\n");
+
+  if (!cfg.openai?.apiKey) return deterministicReport(prompt, s);
+
+  const llmPrompt =
+    "You are Sentinel, an autonomous market-intelligence agent on BOT Chain. " +
+    "Write a concise intel brief (max 120 words) covering: liquidity read, activity read, notable anomalies. " +
+    "Plain prose, no markdown.\n\nLIVE ON-CHAIN DATA:\n" + dataBrief +
+    "\n\nANALYST REQUEST:\n" + prompt;
+  const text = await openaiCompat(llmPrompt, {
+    apiKey: cfg.openai.apiKey,
+    baseUrl: cfg.openai.baseUrl ?? "https://api.openai.com/v1",
+    model: cfg.openai.model || "gpt-4o-mini",
+  });
+  return `[sentinel:${cfg.openai.model || "gpt-4o-mini"}] ${text.trim()}`;
 }
 
 async function openaiCompat(prompt, cfg) {
@@ -52,6 +138,8 @@ export async function runInference(backend, inputBytes, cfg) {
   switch (kind) {
     case "echo":
       return echo(prompt);
+    case "sentinel":
+      return sentinel(prompt, cfg);
     case "openai":
       if (!cfg.openai?.apiKey) throw new Error("OPENAI_API_KEY not configured");
       return openaiCompat(prompt, {

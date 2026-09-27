@@ -27,6 +27,7 @@ if (cfg.coordinator === "0x0000000000000000000000000000000000000000")
   throw new Error("COORDINATOR_ADDRESS env required");
 
 const provider = new JsonRpcProvider(cfg.rpc, cfg.chainId);
+cfg.provider = provider; // sentinel backend reads live chain state through this
 const operator = new Wallet(cfg.operatorKey, provider);
 
 const COORD_ABI = [

@@ -264,6 +264,12 @@ Phase 3 (marked `MAINNET-GATE`) — before deploy, not after.
 | OracleCoordinator | testnet-968 | `0x7F7e5256cA568B981e1a09642d8F756D9c89F706` | `0x56c01f382c6ec5836e64c28ff977f875d0d03bb694b7adf4ba279214acaf4fa6` |
 | Sentinel (echo:v1, 5min) | testnet-968 | `0x0245cc872b5F51197dDE6E0dc3b7A21a3c55F787` | forge broadcast run |
 
+**Model registrations (testnet):** `echo:v1` `0x3910a127…` and
+`openai:gpt-4o-mini` `0x23b8fc05…` from Deploy.s.sol; `sentinel:v1`
+`0x2c9a7f15bb5bf1e2d68e4e3ceeb634b14036037af1bbcd69e8ba93b054fbc2fc` via
+`setModel` tx `0x684a9b12…` → `Sentinel.setQuery` tx `0x429c89fe…` (price
+0.001 BOT). Sentinel now requests the data-bearing intel model.
+
 **Phase 1 evidence (testnet, 2026-09-26):** operator registered (0.5 tBOT
 stake, tx `0xe66f1139…`); request #1 `0xf233be0f…` → node picked up
 `RequestSent` via getLogs-poll → echo inference → `fulfill` tx
@@ -279,6 +285,14 @@ reads `echo:Summarize the state of the BOT Chain ecosystem…[tick 1]`.
 Callback round-trip verified on-chain including the reverting-callback edge
 (CallbackResult=false on oversized outputs → node now caps output at 2KB and
 normalizes hex-string inputs to bytes — both found by exercising).
+
+**sentinel:v1 evidence (testnet, 2026-09-27):** request #25 fulfilled
+(`0x54e1695f…`) with a real-data report — `latestReport` reads live block,
+gas, BDEX WBOT/USDT reserves (519.7 WBOT / 0 USDT), oracle stats. Backend:
+`node/src/backends.js` `sentinel:` — builds the snapshot via RPC, calls the
+configured OpenAI-compatible LLM when `OPENAI_API_KEY` is set, else emits a
+labeled deterministic report (no fake inference). Node runs detached via
+`node --env-file=.env.testnet src/index.js` (env gitignored).
 
 **Phase 1 — Core protocol (testnet)**
 Coordinator + registry + model registry + consumer interface; oracle-node with

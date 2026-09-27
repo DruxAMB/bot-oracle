@@ -1,4 +1,4 @@
-import { JsonRpcProvider, Contract, formatEther } from "ethers";
+import { JsonRpcProvider, Contract, AbiCoder, formatEther } from "ethers";
 
 export const NET = {
   name: process.env.NEXT_PUBLIC_NET_NAME ?? "BOT Chain Testnet",
@@ -18,15 +18,27 @@ const COORD_ABI = [
   "event RequestSent(uint256 indexed requestId, address indexed requester, bytes32 indexed modelId, bytes32 inputHash, bytes input, address callbackContract)",
   "event RequestFulfilled(uint256 indexed requestId, address indexed operator, bytes32 outputHash, bytes output)",
 ];
-const REG_ABI = ["function operatorCount() view returns (uint256)", "function minStake() view returns (uint256)"];
+const REG_ABI = [
+  "function operatorCount() view returns (uint256)",
+  "function minStake() view returns (uint256)",
+  "function operatorList(uint256) view returns (address)",
+  "function operators(address) view returns (uint256 stake, uint256 unstakeRequestedAt, string nodeEndpoint)",
+  "function isActiveOperator(address) view returns (bool)",
+];
+const MODELS_ABI = [
+  "event ModelSet(bytes32 indexed modelId, uint256 priceWei, bytes32 containerHash, string backend, bool active)",
+];
 const SENT_ABI = [
   "function latestReport() view returns (string)",
   "function latestReportAt() view returns (uint64)",
   "function tickIndex() view returns (uint256)",
   "function modelId() view returns (bytes32)",
+  "function minInterval() view returns (uint64)",
+  "function lastTickAt() view returns (uint64)",
 ];
 
 const STATUS = ["Pending", "Fulfilled", "Refunded", "Disputed", "Resolved"] as const;
+const abi = AbiCoder.defaultAbiCoder();
 
 export type RequestRow = {
   id: bigint;
@@ -36,6 +48,22 @@ export type RequestRow = {
   status: string;
   ageSec: number;
   operator: string | null;
+  txHash: string;
+  result: string | null;
+};
+
+export type ModelRow = {
+  modelId: string;
+  priceWei: bigint;
+  backend: string;
+  active: boolean;
+};
+
+export type OperatorRow = {
+  address: string;
+  stake: bigint;
+  endpoint: string;
+  active: boolean;
 };
 
 export type DashData = {
@@ -45,11 +73,23 @@ export type DashData = {
   feesWei: bigint;
   operatorCount: bigint;
   minStake: bigint;
+  models: ModelRow[];
+  operators: OperatorRow[];
   sentinelTicks: bigint;
   sentinelReport: string;
   sentinelReportAt: number;
+  sentinelBalance: bigint;
+  sentinelMinInterval: number;
+  sentinelLastTickAt: number;
   requests: RequestRow[];
   offline?: string;
+};
+
+const EMPTY: DashData = {
+  block: 0, totalRequests: 0n, fulfilled: 0, feesWei: 0n, operatorCount: 0n,
+  minStake: 0n, models: [], operators: [], sentinelTicks: 0n, sentinelReport: "",
+  sentinelReportAt: 0, sentinelBalance: 0n, sentinelMinInterval: 0, sentinelLastTickAt: 0,
+  requests: [],
 };
 
 export async function loadDash(): Promise<DashData> {
@@ -58,31 +98,56 @@ export async function loadDash(): Promise<DashData> {
     const coord = new Contract(NET.coordinator, COORD_ABI, p);
     const reg = new Contract(NET.registry, REG_ABI, p);
     const sent = new Contract(NET.sentinel, SENT_ABI, p);
+    const modelReg = new Contract(NET.models, MODELS_ABI, p);
 
-    const [block, nextId, fees, ops, stake, ticks, report, reportAt] = await Promise.all([
-      p.getBlockNumber(),
-      coord.nextRequestId(),
-      coord.accruedProtocolFees(),
-      reg.operatorCount(),
-      reg.minStake(),
-      sent.tickIndex(),
-      sent.latestReport().catch(() => ""),
-      sent.latestReportAt().catch(() => 0n),
+    const [block, nextId, fees, ops, stake, ticks, report, reportAt, sentBal, sentInterval, sentLastTick] =
+      await Promise.all([
+        p.getBlockNumber(),
+        coord.nextRequestId(),
+        coord.accruedProtocolFees(),
+        reg.operatorCount(),
+        reg.minStake(),
+        sent.tickIndex(),
+        sent.latestReport().catch(() => ""),
+        sent.latestReportAt().catch(() => 0n),
+        p.getBalance(NET.sentinel).catch(() => 0n),
+        sent.minInterval().catch(() => 0n),
+        sent.lastTickAt().catch(() => 0n),
+      ]);
+
+    const from = Math.max(0, block - 50_000);
+    const [sentLogs, fulfilledLogs, modelLogs] = await Promise.all([
+      p.getLogs({ address: NET.coordinator, topics: [coord.interface.getEvent("RequestSent")!.topicHash], fromBlock: from, toBlock: "latest" }),
+      p.getLogs({ address: NET.coordinator, topics: [coord.interface.getEvent("RequestFulfilled")!.topicHash], fromBlock: from, toBlock: "latest" }),
+      p.getLogs({ address: NET.models, topics: [modelReg.interface.getEvent("ModelSet")!.topicHash], fromBlock: 0, toBlock: "latest" }),
     ]);
 
-    const total = nextId - 1n;
-    const sentLogs = await p.getLogs({
-      address: NET.coordinator,
-      topics: [coord.interface.getEvent("RequestSent")!.topicHash],
-      fromBlock: Math.max(0, block - 50_000),
-      toBlock: "latest",
-    });
-    const fulfilledLogs = await p.getLogs({
-      address: NET.coordinator,
-      topics: [coord.interface.getEvent("RequestFulfilled")!.topicHash],
-      fromBlock: Math.max(0, block - 50_000),
-      toBlock: "latest",
-    });
+    // requestId -> decoded output string (from RequestFulfilled payload)
+    const results = new Map<string, string>();
+    for (const l of fulfilledLogs) {
+      try {
+        const [, output] = abi.decode(["bytes32", "bytes"], l.data);
+        const [text] = abi.decode(["string"], output);
+        results.set(BigInt(l.topics[1]).toString(), text);
+      } catch {}
+    }
+
+    // models: last ModelSet per modelId wins (updates in place)
+    const modelMap = new Map<string, ModelRow>();
+    for (const l of modelLogs) {
+      try {
+        const [priceWei, , backend, active] = abi.decode(["uint256", "bytes32", "string", "bool"], l.data);
+        modelMap.set(l.topics[1], { modelId: l.topics[1], priceWei, backend, active });
+      } catch {}
+    }
+
+    const opList: OperatorRow[] = await Promise.all(
+      Array.from({ length: Number(ops) }, async (_, i) => {
+        const addr = await reg.operatorList(i);
+        const [o, active] = await Promise.all([reg.operators(addr), reg.isActiveOperator(addr)]);
+        return { address: addr, stake: o.stake, endpoint: o.nodeEndpoint, active };
+      })
+    );
 
     const recent = sentLogs.slice(-15).reverse();
     const now = Math.floor(Date.now() / 1000);
@@ -92,33 +157,36 @@ export async function loadDash(): Promise<DashData> {
         const r = await coord.requests(id);
         return {
           id,
-          requester: l.topics[2],
+          requester: "0x" + l.topics[2].slice(26),
           modelId: l.topics[3],
           fee: formatEther(r.fee),
           status: STATUS[Number(r.status)] ?? "?",
           ageSec: Math.max(0, now - Number(r.createdAt)),
           operator: Number(r.status) === 1 ? r.operator : null,
+          txHash: l.transactionHash,
+          result: results.get(id.toString()) ?? null,
         };
       })
     );
 
     return {
       block,
-      totalRequests: total,
+      totalRequests: nextId - 1n,
       fulfilled: fulfilledLogs.length,
       feesWei: fees,
       operatorCount: ops,
       minStake: stake,
+      models: [...modelMap.values()],
+      operators: opList,
       sentinelTicks: ticks,
       sentinelReport: report,
       sentinelReportAt: Number(reportAt),
+      sentinelBalance: sentBal,
+      sentinelMinInterval: Number(sentInterval),
+      sentinelLastTickAt: Number(sentLastTick),
       requests: rows,
     };
   } catch (e) {
-    return {
-      block: 0, totalRequests: 0n, fulfilled: 0, feesWei: 0n, operatorCount: 0n,
-      minStake: 0n, sentinelTicks: 0n, sentinelReport: "", sentinelReportAt: 0,
-      requests: [], offline: e instanceof Error ? e.message.slice(0, 160) : "rpc unreachable",
-    };
+    return { ...EMPTY, offline: e instanceof Error ? e.message.slice(0, 160) : "rpc unreachable" };
   }
 }
