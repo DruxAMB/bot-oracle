@@ -17,6 +17,10 @@ export default function Dialog({
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  // Callers pass inline closures — keep the latest in a ref so the
+  // mount effect doesn't re-run (and steal input focus) every render.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
@@ -26,7 +30,7 @@ export default function Dialog({
       // closing stacked modals at once.
       if (e.key !== "Escape") return;
       const dialogs = document.querySelectorAll('[role="dialog"]');
-      if (dialogs[dialogs.length - 1] === ref.current) onClose();
+      if (dialogs[dialogs.length - 1] === ref.current) onCloseRef.current();
     };
     document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
@@ -36,7 +40,7 @@ export default function Dialog({
       document.body.style.overflow = prevOverflow;
       prev?.focus?.();
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
