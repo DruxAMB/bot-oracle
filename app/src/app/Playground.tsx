@@ -12,6 +12,7 @@ import { useWallet } from "./Wallet";
 import Dialog, { DialogHeader } from "./Dialog";
 import Markdown from "./Markdown";
 import { ThinkingOrb } from "thinking-orbs";
+import { toast } from "sonner";
 
 const COORD_ABI = [
   "function request(bytes32,bytes,address,uint64) payable returns (uint256)",
@@ -99,6 +100,11 @@ export default function Playground({
           if (gen !== pollGen.current) return;
           localStorage.removeItem("pg-pending");
           setPhase({ s: "done", requestId, txHash, fulfillTx, result });
+          toast.success(`Request #${requestId} fulfilled`, {
+            action: fulfillTx
+              ? { label: "fulfill tx ↗", onClick: () => window.open(`${explorer}/tx/${fulfillTx}`, "_blank") }
+              : undefined,
+          });
           wallet.refresh();
           return;
         }
@@ -114,10 +120,9 @@ export default function Playground({
     }
     if (gen !== pollGen.current) return;
     localStorage.removeItem("pg-pending");
-    setPhase({
-      s: "error",
-      message: `Request #${requestId} still pending after 180s — check the explorer.`,
-    });
+    const msg = `Request #${requestId} still pending after 180s — check the explorer.`;
+    setPhase({ s: "error", message: msg });
+    toast.error(msg);
   }
 
   // Restore draft + resume an in-flight request across page refreshes.
@@ -130,9 +135,11 @@ export default function Playground({
         const { requestId, txHash, block } = JSON.parse(pending);
         setPhase({ s: "pending", requestId, txHash });
         setOpen(true);
-        pollResult(requestId, txHash, block ?? 0).catch((e) =>
-          setPhase({ s: "error", message: e?.message ?? "poll failed" })
-        );
+        pollResult(requestId, txHash, block ?? 0).catch((e) => {
+          const msg = e?.message ?? "poll failed";
+          setPhase({ s: "error", message: msg });
+          toast.error(msg);
+        });
       } catch {
         localStorage.removeItem("pg-pending");
       }
@@ -178,6 +185,9 @@ export default function Playground({
       const requestId = reqLog?.args?.requestId?.toString();
       if (!requestId) throw new Error("requestId missing from receipt");
       setPhase({ s: "pending", requestId, txHash: tx.hash });
+      toast.success(`Request #${requestId} submitted — operator notified`, {
+        action: { label: "tx ↗", onClick: () => window.open(`${explorer}/tx/${tx.hash}`, "_blank") },
+      });
       localStorage.setItem(
         "pg-pending",
         JSON.stringify({ requestId, txHash: tx.hash, block: receipt.blockNumber })
@@ -187,10 +197,9 @@ export default function Playground({
       if (e?.message?.startsWith("request ended")) pollGen.current++;
       localStorage.removeItem("pg-pending");
       wallet.refresh();
-      setPhase({
-        s: "error",
-        message: e?.shortMessage ?? e?.info?.error?.message ?? e?.message ?? "request failed",
-      });
+      const msg = e?.shortMessage ?? e?.info?.error?.message ?? e?.message ?? "request failed";
+      setPhase({ s: "error", message: msg });
+      toast.error(msg);
     }
   }
 

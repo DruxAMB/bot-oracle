@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { BrowserProvider, formatEther } from "ethers";
+import { toast } from "sonner";
 
 export type WalletStatus = "idle" | "connecting" | "noWallet" | "wrongChain" | "ready";
 
@@ -12,7 +13,7 @@ interface WalletCtxValue {
   connectError: string;
   connect(): Promise<void>;
   switchChain(): Promise<void>;
-  refresh(): Promise<void>;
+  refresh(): Promise<WalletStatus>;
 }
 
 const WalletContext = createContext<WalletCtxValue>({
@@ -22,7 +23,7 @@ const WalletContext = createContext<WalletCtxValue>({
   connectError: "",
   connect: async () => {},
   switchChain: async () => {},
-  refresh: async () => {},
+  refresh: async () => "idle" as WalletStatus,
 });
 
 export const useWallet = () => useContext(WalletContext);
@@ -50,11 +51,11 @@ export function WalletProvider({
 
   // Derive wallet state without prompting — eth_accounts only returns
   // accounts the site is already authorized for.
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (): Promise<WalletStatus> => {
     const eth = injected();
     if (!eth) {
       setStatus("noWallet");
-      return;
+      return "noWallet";
     }
     try {
       const [accounts, cid] = await Promise.all([
@@ -65,19 +66,21 @@ export function WalletProvider({
         setStatus("idle");
         setAddress("");
         setBalance(0n);
-        return;
+        return "idle";
       }
       if (Number(BigInt(cid)) !== chainId) {
         setStatus("wrongChain");
         setAddress(accounts[0]);
-        return;
+        return "wrongChain";
       }
       const bp = new BrowserProvider(eth);
       setAddress(accounts[0]);
       setBalance(await bp.getBalance(accounts[0]));
       setStatus("ready");
+      return "ready";
     } catch {
       // transient wallet/RPC hiccup — keep prior state
+      return "idle";
     }
   }, [chainId]);
 
@@ -85,7 +88,9 @@ export function WalletProvider({
     const eth = injected();
     if (!eth) {
       setStatus("noWallet");
-      setConnectError("No EVM wallet found — install MetaMask or BO Wallet, then retry.");
+      const msg = "No EVM wallet found — install MetaMask or BO Wallet, then retry.";
+      setConnectError(msg);
+      toast.error(msg);
       return;
     }
     setStatus("connecting");
@@ -93,9 +98,14 @@ export function WalletProvider({
     try {
       await eth.request({ method: "eth_requestAccounts" });
     } catch (e: any) {
-      setConnectError(e?.shortMessage ?? e?.message ?? "connection rejected");
+      const msg = e?.shortMessage ?? e?.message ?? "connection rejected";
+      setConnectError(msg);
+      toast.error(msg);
+      return;
     }
-    await refresh();
+    const s = await refresh();
+    if (s === "ready") toast.success("Wallet connected");
+    else if (s === "wrongChain") toast.warning("Connected — switch to BOT Chain Testnet");
   }, [refresh]);
 
   const switchChain = useCallback(async () => {
@@ -120,14 +130,19 @@ export function WalletProvider({
           });
         } catch (e2: any) {
           setConnectError(e2?.message ?? "could not add network");
+          toast.error(e2?.message ?? "could not add network");
           return;
         }
       } else {
-        setConnectError(e?.shortMessage ?? e?.message ?? "network switch rejected");
+        const msg = e?.shortMessage ?? e?.message ?? "network switch rejected";
+        setConnectError(msg);
+        toast.error(msg);
         return;
       }
     }
-    await refresh();
+    const s = await refresh();
+    if (s === "ready") toast.success(`Switched to ${chainName}`);
+    else if (s === "wrongChain") toast.warning(`Still on the wrong network — expected chain ${chainId}`);
   }, [chainId, chainName, rpc, explorer, refresh]);
 
   useEffect(() => {

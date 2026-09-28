@@ -3,6 +3,7 @@ import { formatEther, id } from "ethers";
 import Playground from "./Playground";
 import AutoRefresh from "./AutoRefresh";
 import { WalletProvider, ConnectWalletButton } from "./Wallet";
+import Toaster from "./Toaster";
 import Markdown from "./Markdown";
 import ResultModal from "./ResultModal";
 
@@ -285,6 +286,7 @@ const text = await o.getResult(requestId);`}</pre>
           {ext("https://github.com/DruxAMB/bot-oracle", "source ↗", "text-muted-foreground hover:underline")}
         </footer>
         </div>
+        <Toaster />
       </WalletProvider>
     </main>
   );
