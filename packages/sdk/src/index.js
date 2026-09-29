@@ -8,6 +8,7 @@ export const STATUS = { PENDING: 0, FULFILLED: 1, REFUNDED: 2, DISPUTED: 3, RESO
 const COORD_ABI = [
   "function request(bytes32 modelId, bytes input, address callbackContract, uint64 callbackGasLimit) payable returns (uint256)",
   "function requests(uint256) view returns (address requester, bytes32 modelId, bytes32 inputHash, uint256 fee, address callbackContract, uint64 callbackGasLimit, uint64 createdAt, uint64 fulfilledAt, uint8 status, bytes32 outputHash, address operator, address challenger)",
+  "event RequestSent(uint256 indexed requestId, address indexed requester, bytes32 indexed modelId, bytes32 inputHash, bytes input, address callbackContract)",
   "event RequestFulfilled(uint256 indexed requestId, address indexed operator, bytes32 outputHash, bytes output)",
 ];
 const MODELS_ABI = ["function models(bytes32) view returns (uint256 priceWei, bytes32 containerHash, string backend, bool active)"];
@@ -49,10 +50,17 @@ export class OracleClient {
     const cb = callbackContract ?? "0x0000000000000000000000000000000000000000";
     const tx = await this.coordinator.request(modelId, payload, cb, callbackGas, { value });
     const receipt = await tx.wait();
+    if (!receipt || receipt.status === 0) {
+      throw new Error(`request tx reverted — check ${tx.hash} on the explorer`);
+    }
     const log = receipt.logs
       .map((l) => { try { return this.coordinator.interface.parseLog(l); } catch { return null; } })
       .find((x) => x?.name === "RequestSent");
-    return { requestId: log?.args?.requestId, txHash: tx.hash };
+    const requestId = log?.args?.requestId;
+    if (requestId === undefined || requestId === null) {
+      throw new Error(`RequestSent missing from receipt of ${tx.hash}`);
+    }
+    return { requestId, txHash: tx.hash };
   }
 
   /** Poll until the request is fulfilled (or throws on refund/timeout). */
@@ -84,7 +92,10 @@ export class OracleClient {
   /** Fetch the delivered output from the RequestFulfilled event. */
   async getResult(requestId) {
     const r = await this.coordinator.requests(requestId);
-    if (Number(r.status) !== STATUS.FULFILLED) throw new Error(`request ${requestId} not fulfilled`);
+    const s = Number(r.status);
+    if (s !== STATUS.FULFILLED && s !== STATUS.RESOLVED) {
+      throw new Error(`request ${requestId} not fulfilled (status ${s})`);
+    }
     const filter = this.coordinator.filters.RequestFulfilled(requestId);
     const logs = await this.coordinator.queryFilter(filter);
     const output = logs[0]?.args?.output;

@@ -12,7 +12,7 @@ consumer that pays for scheduled analyses and stores them on-chain.
 | `contracts/` | Foundry project — coordinator, registries, Sentinel, tests (17 passing) |
 | `node/` | Oracle node — getLogs-poller, model backends, fulfiller, Sentinel keeper |
 | `gateway/` | HTTP API — `POST /v1/query`, API keys + usage metering |
-| `packages/sdk/` | `@bot-oracle/sdk` — request / awaitResult / verifyResult |
+| `packages/sdk/` | `@bot-oracle/sdk` — request / awaitResult / verifyResult; install from source (`npm i ./packages/sdk`) until published; `test/smoke.mjs` runs a live on-chain round trip |
 | `app/` | Next.js dashboard + docs |
 | `starter/` | Clonable consumer template for integrators |
 | `scripts/` | Chain recon + spike probes (RPC, WS, BDEX, deploy, getLogs) |

@@ -254,7 +254,7 @@ export default async function Home() {
   -H 'content-type: application/json' \\
   -H 'x-api-key: <issued-key>' \\
   -d '{"model":"echo:v1","prompt":"hello"}'`}</pre>
-            <p className="text-xs text-muted-foreground mt-3 mb-2">JS SDK:</p>
+            <p className="text-xs text-muted-foreground mt-3 mb-2">JS SDK (in this repo — <code className="text-steel">packages/sdk</code>, npm publish pending):</p>
             <pre className="overflow-x-auto rounded bg-background border border-border p-3 text-xs text-secondary">{`import { OracleClient } from "@bot-oracle/sdk";
 const o = new OracleClient({ rpcUrl, chainId: 968, coordinator, models, signer });
 const value = await o.priceOf(OracleClient.modelId("echo:v1"));

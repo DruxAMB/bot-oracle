@@ -1,6 +1,6 @@
 {
   "name": "@bot-oracle/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Client SDK for the BOT Chain AI oracle: request, awaitResult, verifyResult",
   "main": "src/index.js",
