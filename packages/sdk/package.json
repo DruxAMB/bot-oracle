@@ -3,6 +3,16 @@
   "version": "0.1.1",
   "type": "module",
   "description": "Client SDK for the BOT Chain AI oracle: request, awaitResult, verifyResult",
+  "license": "MIT",
+  "author": "DruxAMB",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DruxAMB/bot-oracle.git",
+    "directory": "packages/sdk"
+  },
+  "keywords": ["bot-chain", "oracle", "ai", "ethers", "web3"],
+  "engines": { "node": ">=18" },
+  "files": ["src", "solidity", "test"],
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js",
