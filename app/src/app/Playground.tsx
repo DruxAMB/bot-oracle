@@ -241,7 +241,7 @@ export default function Playground({
 
             {wallet.status === "noWallet" && (
               <p className="text-sm text-warning">
-                No EVM wallet found -{" "}
+                No EVM wallet found:{" "}
                 <a className="underline" href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer">
                   install MetaMask
                 </a>{" "}

@@ -113,7 +113,7 @@ export default async function Home() {
         </section>
 
         <section aria-labelledby="sentinel-h" className="category-mark rounded-lg border border-border bg-card mb-8">
-          <details className="group" open>
+          <details className="group">
             <summary className="flex flex-wrap items-baseline justify-between gap-2 p-5 pb-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden rounded-lg focus-visible:outline-2 focus-visible:outline-primary">
               <h2 id="sentinel-h" className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                 <span aria-hidden className="inline-block text-steel transition-transform group-open:rotate-90">›</span>
