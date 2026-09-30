@@ -40,7 +40,7 @@ for (const ep of ENDPOINTS) {
       console.log(`  ${method.padEnd(32)} FETCH-FAIL ${e.message}`);
     }
   }
-  // getLogs probe — is it disabled here?
+  // getLogs probe - is it disabled here?
   try {
     const r = await rpc(ep.url, "eth_getLogs", [
       { fromBlock: "latest", toBlock: "latest" },
@@ -49,7 +49,7 @@ for (const ep of ENDPOINTS) {
   } catch (e) {
     console.log(`  ${"eth_getLogs (probe)".padEnd(32)} FETCH-FAIL ${e.message}`);
   }
-  // fee history — EIP-1559 support check
+  // fee history - EIP-1559 support check
   try {
     const r = await rpc(ep.url, "eth_feeHistory", ["0x5", "latest", []]);
     console.log(`  ${"eth_feeHistory (5)".padEnd(32)} ${JSON.stringify(r).slice(0, 200)}`);

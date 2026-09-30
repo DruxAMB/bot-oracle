@@ -9,7 +9,7 @@ import {IOracleConsumer} from "./IOracleConsumer.sol";
 
 /// @notice Request/response AI oracle: consumers escrow a fee per query,
 /// registered operators run inference off-chain and fulfill on-chain.
-/// Trust model v1: single staked operator set, slashable by an arbitrator —
+/// Trust model v1: single staked operator set, slashable by an arbitrator -
 /// honest centralization, with multi-operator consensus on the roadmap.
 /// Fees are native BOT only; USDT billing arrives with the subscription vault.
 contract OracleCoordinator is Ownable, ReentrancyGuard {
@@ -49,7 +49,7 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
     uint256 public accruedProtocolFees;
     mapping(uint256 => Request) public requests;
 
-    /// @dev `input` rides in the event payload — the node reads it from logs,
+    /// @dev `input` rides in the event payload - the node reads it from logs,
     /// consumers don't pay storage for it, `inputHash` keeps it honest.
     event RequestSent(
         uint256 indexed requestId,
@@ -124,7 +124,7 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
     }
 
     /// @notice Operator delivers the result. Pays out fee minus protocol cut and
-    /// invokes the consumer callback — a reverting callback never blocks the
+    /// invokes the consumer callback - a reverting callback never blocks the
     /// fulfill (the result still lands on-chain, consumable by polling).
     function fulfill(uint256 requestId, bytes calldata output) external nonReentrant {
         if (!operators.isActiveOperator(msg.sender)) revert NotAnOperator(msg.sender);

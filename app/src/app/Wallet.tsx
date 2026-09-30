@@ -49,7 +49,7 @@ export function WalletProvider({
   const [balance, setBalance] = useState(0n);
   const [connectError, setConnectError] = useState("");
 
-  // Derive wallet state without prompting — eth_accounts only returns
+  // Derive wallet state without prompting - eth_accounts only returns
   // accounts the site is already authorized for.
   const refresh = useCallback(async (): Promise<WalletStatus> => {
     const eth = injected();
@@ -79,7 +79,7 @@ export function WalletProvider({
       setStatus("ready");
       return "ready";
     } catch {
-      // transient wallet/RPC hiccup — keep prior state
+      // transient wallet/RPC hiccup - keep prior state
       return "idle";
     }
   }, [chainId]);
@@ -88,7 +88,7 @@ export function WalletProvider({
     const eth = injected();
     if (!eth) {
       setStatus("noWallet");
-      const msg = "No EVM wallet found — install MetaMask or BO Wallet, then retry.";
+      const msg = "No EVM wallet found. Install MetaMask or BO Wallet, then retry.";
       setConnectError(msg);
       toast.error(msg);
       return;
@@ -105,7 +105,7 @@ export function WalletProvider({
     }
     const s = await refresh();
     if (s === "ready") toast.success("Wallet connected");
-    else if (s === "wrongChain") toast.warning("Connected — switch to BOT Chain Testnet");
+    else if (s === "wrongChain") toast.warning("Connected; switch to BOT Chain Testnet");
   }, [refresh]);
 
   const switchChain = useCallback(async () => {
@@ -142,7 +142,7 @@ export function WalletProvider({
     }
     const s = await refresh();
     if (s === "ready") toast.success(`Switched to ${chainName}`);
-    else if (s === "wrongChain") toast.warning(`Still on the wrong network — expected chain ${chainId}`);
+    else if (s === "wrongChain") toast.warning(`Still on the wrong network; expected chain ${chainId}`);
   }, [chainId, chainName, rpc, explorer, refresh]);
 
   useEffect(() => {
@@ -195,7 +195,7 @@ export function ConnectWalletButton() {
   if (status === "wrongChain") {
     return (
       <button onClick={switchChain} className={`${btn} bg-warning text-black hover:bg-warning/80`}>
-        Wrong network — switch
+        Wrong network · switch
       </button>
     );
   }

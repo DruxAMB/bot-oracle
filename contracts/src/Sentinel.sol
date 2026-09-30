@@ -6,10 +6,10 @@ import {OracleCoordinator} from "./OracleCoordinator.sol";
 import {IOracleConsumer} from "./IOracleConsumer.sol";
 import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
 
-/// @notice Sentinel — the oracle's flagship autonomous consumer.
+/// @notice Sentinel - the oracle's flagship autonomous consumer.
 /// On a schedule, it pays the oracle for a market-intel inference from its own
 /// funded balance and stores each report on-chain. Every cycle is request +
-/// fulfill + callback — the product's own activity feed, visible on the explorer.
+/// fulfill + callback - the product's own activity feed, visible on the explorer.
 /// Anyone may fund() it; the keeper just calls tick().
 contract Sentinel is IOracleConsumer, Ownable {
     OracleCoordinator public oracle;
@@ -49,7 +49,7 @@ contract Sentinel is IOracleConsumer, Ownable {
         promptText = promptText_;
     }
 
-    /// @notice Anyone may top up the query fund — community-sponsored autonomy.
+    /// @notice Anyone may top up the query fund - community-sponsored autonomy.
     function fund() external payable {}
     receive() external payable {}
 

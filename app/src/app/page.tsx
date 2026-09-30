@@ -10,7 +10,7 @@ import ResultModal from "./ResultModal";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
-  title: "bot-oracle — live network",
+  title: "bot-oracle | live network",
   description: "AI compute oracle on BOT Chain: live requests, fulfillments, fees and Sentinel reports.",
 };
 
@@ -83,14 +83,14 @@ export default async function Home() {
                 bot-oracle
               </h1>
               <p className="text-sm text-muted-foreground">
-                AI compute oracle · {NET.name} · block {d.block || "—"}
+                AI compute oracle · {NET.name} · block {d.block || "-"}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {d.offline ? (
                 <span className="inline-flex items-center gap-2 rounded-full border border-warning bg-card px-3 py-1 text-xs text-warning">
                   <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />
-                  RPC offline — {d.offline}
+                  RPC offline: {d.offline}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground">
@@ -112,29 +112,34 @@ export default async function Home() {
           ))}
         </section>
 
-        <section aria-labelledby="sentinel-h" className="category-mark rounded-lg border border-border bg-card p-5 mb-8">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-            <h2 id="sentinel-h" className="text-sm font-medium text-foreground">
-              Sentinel — autonomous consumer
-            </h2>
-            <span className="text-xs text-muted-foreground">
-              {String(d.sentinelTicks)} ticks ·
-              {d.sentinelReportAt ? ` last report ${ago(now - d.sentinelReportAt)}` : " no reports yet"} ·
-              {nextTickIn != null && ` next tick in ~${Math.ceil(nextTickIn / 60)}m`} ·
-              balance {Number(formatEther(d.sentinelBalance)).toFixed(3)} BOT
-            </span>
-          </div>
-          {d.sentinelReport ? (
-            <Markdown>{d.sentinelReport}</Markdown>
-          ) : (
-            <p className="text-secondary text-sm leading-relaxed">
-              {"Awaiting first report — Sentinel ticks every " + Math.round(d.sentinelMinInterval / 60) + " minutes and stores each result here."}
-            </p>
-          )}
-          <p className="mt-3 text-xs text-steel">
-            Every cycle is a paid oracle request — the product generates its own on-chain demand.{" "}
-            {ext(`${NET.explorer}/address/${NET.sentinel}`, "contract ↗")}
-          </p>
+        <section aria-labelledby="sentinel-h" className="category-mark rounded-lg border border-border bg-card mb-8">
+          <details className="group" open>
+            <summary className="flex flex-wrap items-baseline justify-between gap-2 p-5 pb-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden rounded-lg focus-visible:outline-2 focus-visible:outline-primary">
+              <h2 id="sentinel-h" className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                <span aria-hidden className="inline-block text-steel transition-transform group-open:rotate-90">›</span>
+                Sentinel · autonomous consumer
+              </h2>
+              <span className="text-xs text-muted-foreground">
+                {String(d.sentinelTicks)} ticks ·
+                {d.sentinelReportAt ? ` last report ${ago(now - d.sentinelReportAt)}` : " no reports yet"} ·
+                {nextTickIn != null && ` next tick in ~${Math.ceil(nextTickIn / 60)}m`} ·
+                balance {Number(formatEther(d.sentinelBalance)).toFixed(3)} BOT
+              </span>
+            </summary>
+            <div className="px-5 pb-5">
+              {d.sentinelReport ? (
+                <Markdown>{d.sentinelReport}</Markdown>
+              ) : (
+                <p className="text-secondary text-sm leading-relaxed">
+                  {"Awaiting first report; Sentinel ticks every " + Math.round(d.sentinelMinInterval / 60) + " minutes and stores each result here."}
+                </p>
+              )}
+              <p className="mt-3 text-xs text-steel">
+                Every cycle is a paid oracle request; the product generates its own on-chain demand.{" "}
+                {ext(`${NET.explorer}/address/${NET.sentinel}`, "contract ↗")}
+              </p>
+            </div>
+          </details>
         </section>
 
         <Playground
@@ -254,7 +259,7 @@ export default async function Home() {
                 {d.requests.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-steel">
-                      No requests in the scanned window — the feed fills as Sentinel ticks land.
+                      No requests in the scanned window; the feed fills as Sentinel ticks land.
                     </td>
                   </tr>
                 )}
@@ -266,12 +271,12 @@ export default async function Home() {
         <div className="grid md:grid-cols-2 gap-4 mb-8">
           <section aria-labelledby="integrate-h" className="min-w-0 rounded-lg border border-border p-5">
             <h2 id="integrate-h" className="text-sm font-medium text-secondary mb-3">Use the oracle</h2>
-            <p className="text-xs text-muted-foreground mb-2">HTTP gateway — one call, on-chain round trip (run your own: <code className="text-steel">gateway/</code> in the repo):</p>
+            <p className="text-xs text-muted-foreground mb-2">HTTP gateway · one call, on-chain round trip (run your own: <code className="text-steel">gateway/</code> in the repo):</p>
             <pre className="overflow-x-auto rounded bg-background border border-border p-3 text-xs text-secondary">{`curl -X POST http://localhost:8791/v1/query \\
   -H 'content-type: application/json' \\
   -H 'x-api-key: <issued-key>' \\
   -d '{"model":"echo:v1","prompt":"hello"}'`}</pre>
-            <p className="text-xs text-muted-foreground mt-3 mb-2">JS SDK (registry publish pending — install from the repo tarball):</p>
+            <p className="text-xs text-muted-foreground mt-3 mb-2">JS SDK (registry publish pending; install from the repo tarball):</p>
             <div className="mb-2">
               <CopyCommand cmd="npm i https://raw.githubusercontent.com/DruxAMB/bot-oracle/main/dist/bot-oracle-sdk-0.1.1.tgz" />
             </div>
@@ -285,7 +290,7 @@ const text = await o.getResult(requestId);`}</pre>
 
           <section aria-labelledby="deploy-h" className="min-w-0 rounded-lg border border-border p-5">
             <h2 id="deploy-h" className="text-sm font-medium text-secondary mb-3">
-              Deployments — verified on explorer
+              Deployments · verified on explorer
             </h2>
             <ul className="space-y-2">
               {deployments.map((x) => (

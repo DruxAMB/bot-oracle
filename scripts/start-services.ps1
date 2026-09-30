@@ -1,11 +1,11 @@
-# start-services.ps1 — launch the bot-oracle node + gateway if they aren't
-# already running. Idempotent: safe to run on a schedule — it only starts
+# start-services.ps1 - launch the bot-oracle node + gateway if they aren't
+# already running. Idempotent: safe to run on a schedule - it only starts
 # what is dead. Registered as the "BOTOracle-Services" scheduled task
 # (at logon, repeating every 5 minutes) so the stack survives reboots and
 # process crashes.
 #
 # Detection: each service is launched with a "--service=<name>" marker arg
-# (ignored by the app — index.js never parses argv), and we match on that
+# (ignored by the app - index.js never parses argv), and we match on that
 # marker in the process CommandLine. The node's and gateway's own
 # "src/index.js" paths are indistinguishable otherwise.
 

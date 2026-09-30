@@ -1,6 +1,6 @@
 // Model backends. v1 is passthrough-first per spec: hosted LLM APIs behind a
 // small interface. "echo" exists so the full pipeline is testable with no keys.
-// "sentinel:" is the flagship intel backend — it reads live chain state, builds
+// "sentinel:" is the flagship intel backend - it reads live chain state, builds
 // a data-bearing prompt, and calls the configured LLM. With no key configured
 // it emits a deterministic data report (labeled) instead of faking inference.
 
@@ -9,13 +9,13 @@ import { getBytes, Contract, formatEther, formatUnits } from "ethers";
 const DECODER = new TextDecoder();
 
 function parsePrompt(rawInput) {
-  // abi.decode hands us a hex string — normalize to bytes before anything else.
+  // abi.decode hands us a hex string - normalize to bytes before anything else.
   const inputBytes = typeof rawInput === "string" ? getBytes(rawInput) : rawInput;
   // Consumers send ABI-encoded payloads; try abi.decode(string) first, then
-  // raw utf8, else hex. Model-defined per spec — keep permissive here.
+  // raw utf8, else hex. Model-defined per spec - keep permissive here.
   try {
     // abi.encode(string): 32B offset (must be 32) + 32B byte-length + utf8 data.
-    // Compare byte lengths — char count diverges for non-ASCII.
+    // Compare byte lengths - char count diverges for non-ASCII.
     if (inputBytes.length >= 64) {
       const offset = Number(BigInt("0x" + Buffer.from(inputBytes.slice(0, 32)).toString("hex")));
       const len = Number(BigInt("0x" + Buffer.from(inputBytes.slice(32, 64)).toString("hex")));
@@ -58,7 +58,7 @@ async function chainSnapshot(cfg) {
   snap.requests = Number(nextId - 1n);
   snap.feesBot = formatEther(fees);
 
-  // BDEX reserves — best-effort; pair may not exist yet on a fresh deployment
+  // BDEX reserves - best-effort; pair may not exist yet on a fresh deployment
   try {
     const factory = new Contract(BDEX.factory, FACTORY_ABI, p);
     const pairAddr = await factory.getPair(BDEX.wbot, BDEX.usdt);
@@ -82,7 +82,7 @@ function deterministicReport(prompt, s) {
     ? `WBOT/USDT pool holds ${s.pair.usdt.toFixed(2)} USDT vs ${s.pair.wbot.toFixed(1)} WBOT (implied ~$${s.pair.price.toFixed(2)}).`
     : `BDEX WBOT/USDT pair unreadable (${s.pairError ?? "no pair"}).`;
   return [
-    `[sentinel:data — deterministic, no LLM key configured]`,
+    `[sentinel:data - deterministic, no LLM key configured]`,
     ``,
     `Block ${s.block}. Gas ${Number(s.gasGwei).toFixed(1)} gwei. ${liq}`,
     `Oracle: ${s.requests} requests served, ${Number(s.feesBot).toFixed(4)} BOT accrued in protocol fees.`,
@@ -115,10 +115,10 @@ async function sentinel(prompt, cfg) {
       baseUrl: cfg.llm.baseUrl ?? "https://api.openai.com/v1",
       model: cfg.llm.model || "gpt-4o-mini",
     });
-    // own line for the audit label — a mid-paragraph prefix breaks `###` heading parse
+    // own line for the audit label - a mid-paragraph prefix breaks `###` heading parse
     return `[sentinel:${cfg.llm.model || "gpt-4o-mini"}]\n\n${text.trim()}`;
   } catch (e) {
-    // LLM down/quota exhausted — degrade to the deterministic report rather
+    // LLM down/quota exhausted - degrade to the deterministic report rather
     // than leaving the request pending until timeout. Label stays honest.
     return `${deterministicReport(prompt, s)} [llm error: ${e.message?.slice(0, 100)}]`;
   }

@@ -32,7 +32,7 @@ function tryWs(url) {
 
 for (const u of candidates) console.log(await tryWs(u));
 
-// chainid.network registry — what RPCs are officially listed for 677/968?
+// chainid.network registry - what RPCs are officially listed for 677/968?
 try {
   const res = await fetch("https://chainid.network/chains.json");
   const chains = await res.json();

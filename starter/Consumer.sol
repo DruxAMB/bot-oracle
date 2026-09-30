@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-/// Minimal oracle consumer — clone this, point it at the deployed coordinator,
+/// Minimal oracle consumer - clone this, point it at the deployed coordinator,
 /// implement IOracleConsumer, fund it, done.
 /// Testnet coordinator: 0x4861Ff97A82436d64514C0B119c4796F46a4d8Da (chain 968)
 interface IOracleCoordinator {

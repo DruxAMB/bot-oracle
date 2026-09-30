@@ -1,6 +1,6 @@
-// bot-oracle gateway — HTTP API over the on-chain oracle.
+// bot-oracle gateway - HTTP API over the on-chain oracle.
 // POST /v1/query {model, prompt} -> on-chain request -> result + tx hashes.
-// Every query is a real on-chain tx — "anchored on-chain" is the product claim,
+// Every query is a real on-chain tx - "anchored on-chain" is the product claim,
 // not a marketing line. API keys are issued after USDT payment (admin-settled
 // for v1); quotas are enforced and metered per key.
 import { createServer } from "node:http";
@@ -20,7 +20,7 @@ const cfg = {
 };
 if (!cfg.walletKey) throw new Error("GATEWAY_KEY env required (BOT-funded wallet)");
 
-// API keys with quotas: GATEWAY_KEYS="keyA:100,keyB:10" — issue after payment.
+// API keys with quotas: GATEWAY_KEYS="keyA:100,keyB:10" - issue after payment.
 const quotas = new Map(
   (process.env.GATEWAY_KEYS ?? "").split(",").filter(Boolean).map((kv) => {
     const [k, q] = kv.split(":");
@@ -118,7 +118,7 @@ function charge(key) {
 
 // --- refund sweeper ---------------------------------------------------------
 // The gateway funds escrow from its own wallet. If the operator never serves
-// a request, the fee sits locked until refundIfTimedOut is called — it's
+// a request, the fee sits locked until refundIfTimedOut is called - it's
 // permissionless, so we call it ourselves on a loop.
 async function sweepRefunds() {
   try {
@@ -158,7 +158,7 @@ const server = createServer(async (req, res) => {
       if (!key) return json(res, 401, { error: "x-api-key required" });
       const quota = quotas.get(key);
       if (quota === undefined) return json(res, 403, { error: "invalid api key" });
-      if ((usage[key] ?? 0) >= quota) return json(res, 402, { error: "quota exhausted — top up" });
+      if ((usage[key] ?? 0) >= quota) return json(res, 402, { error: "quota exhausted - top up" });
       return await handleQuery(req, res, key);
     }
     if (req.method === "GET" && req.url?.startsWith("/v1/result/")) {
@@ -178,4 +178,4 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(cfg.port, () => console.log(`gateway on :${cfg.port} — wallet ${wallet.address}`));
+server.listen(cfg.port, () => console.log(`gateway on :${cfg.port} - wallet ${wallet.address}`));

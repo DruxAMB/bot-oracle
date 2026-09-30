@@ -17,7 +17,7 @@ export default function Dialog({
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  // Callers pass inline closures — keep the latest in a ref so the
+  // Callers pass inline closures - keep the latest in a ref so the
   // mount effect doesn't re-run (and steal input focus) every render.
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -26,7 +26,7 @@ export default function Dialog({
     const prev = document.activeElement as HTMLElement | null;
     ref.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      // Only the topmost dialog responds — prevents one Escape from
+      // Only the topmost dialog responds - prevents one Escape from
       // closing stacked modals at once.
       if (e.key !== "Escape") return;
       const dialogs = document.querySelectorAll('[role="dialog"]');

@@ -25,7 +25,7 @@ export default function ResultModal({
       </button>
       {open && (
         <Dialog onClose={() => setOpen(false)} labelId={labelId} wide>
-          <DialogHeader id={labelId} title={`Request #${requestId} — result`} onClose={() => setOpen(false)} />
+          <DialogHeader id={labelId} title={`Request #${requestId} · result`} onClose={() => setOpen(false)} />
           <Markdown>{result}</Markdown>
         </Dialog>
       )}

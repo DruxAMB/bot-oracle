@@ -4,7 +4,7 @@ pragma solidity ^0.8.30;
 import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
 
 /// @notice Registry of models the oracle will serve, with per-query pricing.
-/// Prices are denominated in wei of the native token (BOT) — v1 charges BOT only.
+/// Prices are denominated in wei of the native token (BOT) - v1 charges BOT only.
 /// USDT-denominated billing arrives with the subscription vault (Phase 2).
 contract ModelRegistry is Ownable {
     struct Model {
@@ -34,7 +34,7 @@ contract ModelRegistry is Ownable {
         emit ModelSet(modelId, priceWei, containerHash, backend, active);
     }
 
-    /// @dev Reverts for unknown or inactive models — callers get a clean failure at request time.
+    /// @dev Reverts for unknown or inactive models - callers get a clean failure at request time.
     function priceOf(bytes32 modelId) external view returns (uint256) {
         Model memory m = models[modelId];
         if (m.containerHash == bytes32(0)) revert ModelNotFound(modelId);

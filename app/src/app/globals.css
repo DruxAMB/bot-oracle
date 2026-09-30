@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 /* Visual language adapted from the Axiom design system
-   (styles.refero.design — "terminal window at midnight"; font substituted
+   (styles.refero.design - "terminal window at midnight"; font substituted
    BerkeleyMono → JetBrains Mono OFL).
-   Kept rules: flat surface stepping only — no shadows, no gradients,
+   Kept rules: flat surface stepping only - no shadows, no gradients,
    no colored backgrounds; every container 2px; ONE accent (ember) used
    only for primary action fills and 2px category marks; monospace voice
    for all text. */
@@ -11,7 +11,7 @@
   --font-sans: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --font-mono: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* surfaces — layer the void, never shadow */
+  /* surfaces - layer the void, never shadow */
   --color-background: #000000;       /* void */
   --color-card: #111111;             /* carbon */
   --color-elevated: #191919;         /* graphite */
@@ -20,22 +20,22 @@
   --color-rule: #505050;             /* pewter */
 
   /* text ladder (contrast on void: paper ≈18:1, fog ≈10:1, ash ≈5.2:1) */
-  --color-foreground: #eeeeee;       /* paper — primary text */
-  --color-secondary: #b4b4b4;        /* fog — body/secondary */
-  --color-muted-foreground: #7e7e7e; /* ash — labels/metadata */
-  --color-steel: #606060;            /* steel — inactive/decorative only */
+  --color-foreground: #eeeeee;       /* paper - primary text */
+  --color-secondary: #b4b4b4;        /* fog - body/secondary */
+  --color-muted-foreground: #7e7e7e; /* ash - labels/metadata */
+  --color-steel: #606060;            /* steel - inactive/decorative only */
 
-  /* the single accent — fills + category marks only, never text */
+  /* the single accent - fills + category marks only, never text */
   --color-primary: #da5c2c;          /* ember */
   --color-primary-hover: #b8491f;
   --color-primary-foreground: #000000;
 
-  /* functional states — small text/dots only */
+  /* functional states - small text/dots only */
   --color-success: #5fae72;
   --color-warning: #d19a3a;
   --color-danger: #d1553b;
 
-  /* every container 2px — pills stay for tiny chips via rounded-full */
+  /* every container 2px - pills stay for tiny chips via rounded-full */
   --radius-sm: 2px;
   --radius-md: 2px;
   --radius-lg: 2px;
@@ -46,12 +46,12 @@
   --color-surface: #000000;
 }
 
-/* Axiom category mark — the 2px ember left border on featured cards */
+/* Axiom category mark - the 2px ember left border on featured cards */
 .category-mark {
   border-left: 2px solid var(--color-primary);
 }
 
-/* scrollbars wear the theme — void track, iron thumb, flat everywhere */
+/* scrollbars wear the theme - void track, iron thumb, flat everywhere */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-strong) transparent;
@@ -75,7 +75,7 @@
   background: transparent;
 }
 
-/* whitepaper prints as a light document — flip the tokens, nothing else */
+/* whitepaper prints as a light document - flip the tokens, nothing else */
 @media print {
   .whitepaper-root {
     --color-surface: #ffffff;

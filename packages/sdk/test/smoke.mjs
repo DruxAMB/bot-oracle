@@ -1,4 +1,4 @@
-// Live smoke test for @bot-oracle/sdk — runs a REAL request through the
+// Live smoke test for @bot-oracle/sdk - runs a REAL request through the
 // package's own code path against the deployed testnet coordinator.
 // Costs one model fee (0.001 tBOT) + gas. Run:
 //   node --env-file=../../node/.env.testnet test/smoke.mjs
@@ -42,4 +42,4 @@ const ok = await o.verifyResult(requestId, text);
 console.log("verifyResult:", ok);
 if (!ok) throw new Error("outputHash mismatch");
 
-console.log("\nPASS — SDK request → awaitResult → getResult → verifyResult all live on-chain");
+console.log("\nPASS - SDK request → awaitResult → getResult → verifyResult all live on-chain");

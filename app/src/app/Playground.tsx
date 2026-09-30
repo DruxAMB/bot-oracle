@@ -33,11 +33,11 @@ type Phase =
 
 const modelHint = (backend: string) =>
   backend.startsWith("echo:")
-    ? "Returns your prompt back — cheapest sanity check."
+    ? "Returns your prompt back; cheapest sanity check."
     : backend.startsWith("sentinel:")
-      ? "Ignores your prompt — writes a live BOT Chain market report via the LLM."
+      ? "Ignores your prompt; writes a live BOT Chain market report via the LLM."
       : backend.startsWith("openai:") || backend.startsWith("llm:")
-        ? "General LLM call — requires the operator to have that model's API key configured."
+        ? "General LLM call; requires the operator to have that model's API key configured."
         : "";
 
 export default function Playground({
@@ -88,7 +88,7 @@ export default function Playground({
             fromBlock: Math.max(0, fromBlock - 5),
             toBlock: "latest",
           });
-          let result = "(fulfilled — output not decodable)";
+          let result = "(fulfilled; output not decodable)";
           let fulfillTx: string | undefined;
           if (logs[0]) {
             fulfillTx = logs[0].transactionHash;
@@ -115,12 +115,12 @@ export default function Playground({
         }
       } catch (e: any) {
         if (e?.message?.startsWith("request ended")) throw e;
-        // transient RPC hiccup — keep polling
+        // transient RPC hiccup - keep polling
       }
     }
     if (gen !== pollGen.current) return;
     localStorage.removeItem("pg-pending");
-    const msg = `Request #${requestId} still pending after 180s — check the explorer.`;
+    const msg = `Request #${requestId} still pending after 180s; check the explorer.`;
     setPhase({ s: "error", message: msg });
     toast.error(msg);
   }
@@ -152,12 +152,12 @@ export default function Playground({
     setPhase({ s: "signing" });
     try {
       const bp = new BrowserProvider((window as any).ethereum);
-      // Re-check chain at send time — the user may have switched networks
+      // Re-check chain at send time - the user may have switched networks
       // after connecting; broadcasting there would pay on the wrong chain.
       const net = await bp.getNetwork();
       if (Number(net.chainId) !== chainId) {
         wallet.refresh();
-        throw new Error("wallet is on the wrong network — switch back and retry");
+        throw new Error("wallet is on the wrong network; switch back and retry");
       }
       const signer = await bp.getSigner();
       const coord = new Contract(coordinator, COORD_ABI, signer);
@@ -171,7 +171,7 @@ export default function Playground({
       );
       const receipt = await tx.wait();
       if (!receipt || receipt.status === 0) {
-        throw new Error("transaction reverted — check the tx on the explorer for the reason");
+        throw new Error("transaction reverted; check the tx on the explorer for the reason");
       }
       const reqLog = receipt.logs
         .map((l: any) => {
@@ -185,7 +185,7 @@ export default function Playground({
       const requestId = reqLog?.args?.requestId?.toString();
       if (!requestId) throw new Error("requestId missing from receipt");
       setPhase({ s: "pending", requestId, txHash: tx.hash });
-      toast.success(`Request #${requestId} submitted — operator notified`, {
+      toast.success(`Request #${requestId} submitted; operator notified`, {
         action: { label: "tx ↗", onClick: () => window.open(`${explorer}/tx/${tx.hash}`, "_blank") },
       });
       localStorage.setItem(
@@ -235,13 +235,13 @@ export default function Playground({
         <Dialog onClose={() => setOpen(false)} labelId="try-h">
           <DialogHeader id="try-h" title="Try the oracle" onClose={() => setOpen(false)} />
           <p className="text-xs text-muted-foreground mb-4">
-              A real on-chain request signed by your wallet — you pay tBOT, the operator runs the
-              model, the answer is written back on-chain. Every query costs tBOT — including spam.
+              A real on-chain request signed by your wallet; you pay tBOT, the operator runs the
+              model, the answer is written back on-chain. Every query costs tBOT, including spam.
             </p>
 
             {wallet.status === "noWallet" && (
               <p className="text-sm text-warning">
-                No EVM wallet found —{" "}
+                No EVM wallet found -{" "}
                 <a className="underline" href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer">
                   install MetaMask
                 </a>{" "}
@@ -290,7 +290,7 @@ export default function Playground({
                   >
                     {models.map((m, i) => (
                       <option key={m.modelId} value={i}>
-                        {m.label} — {formatEther(BigInt(m.priceWei))} BOT
+                        {m.label} · {formatEther(BigInt(m.priceWei))} BOT
                       </option>
                     ))}
                   </select>
@@ -331,11 +331,11 @@ export default function Playground({
                       ? "Confirm in wallet…"
                       : phase.s === "pending"
                         ? "Waiting for fulfill…"
-                        : `Send query — ${model ? formatEther(BigInt(model.priceWei)) : "?"} BOT →`}
+                        : `Send query · ${model ? formatEther(BigInt(model.priceWei)) : "?"} BOT →`}
                   </button>
                   {insufficient && (
                     <span className="text-xs text-warning">
-                      Balance too low — get tBOT at{" "}
+                      Balance too low; get tBOT at{" "}
                       <a
                         className="underline"
                         href="https://faucet.botchain.ai/en/basic"
@@ -359,7 +359,7 @@ export default function Playground({
                     <a className="underline" href={`${explorer}/tx/${phase.txHash}`} target="_blank" rel="noopener noreferrer">
                       tx ↗
                     </a>{" "}
-                    — operator is running inference…
+                    · operator is running inference…
                   </span>
                 </p>
               )}

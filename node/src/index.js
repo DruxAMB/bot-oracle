@@ -1,4 +1,4 @@
-// bot-oracle node — v1
+// bot-oracle node - v1
 // Polls RequestSent events via eth_getLogs (primary path per SPEC §3.3),
 // runs inference via the model's registered backend, fulfills on-chain.
 // Restart-safe: pending set is rebuilt from on-chain state every boot.
@@ -68,7 +68,7 @@ async function processRange(from, to) {
     const requestId = BigInt(log.topics[1]);
     if (t === T_REQUEST) {
       const decoded = abi.decode(["bytes32", "bytes", "address"], log.data); // inputHash, input, callbackContract
-      // topics: [sig, requestId, requester, modelId] — modelId is topics[3]
+      // topics: [sig, requestId, requester, modelId] - modelId is topics[3]
       pending.set(requestId, { modelId: log.topics[3], input: decoded[1] });
     } else {
       pending.delete(requestId);
@@ -89,18 +89,18 @@ async function serve(requestId, job) {
 
     console.log(`#${requestId} inference via ${m.backend}`);
     const text = await runInference(m.backend, job.input, cfg);
-    // Cap output size — a consumer's callback pays storage gas per byte; an
+    // Cap output size - a consumer's callback pays storage gas per byte; an
     // unbounded backend response can price the callback into OutOfGas.
     const capped = text.length > 2000 ? text.slice(0, 2000) : text;
     const output = abi.encode(["string"], [capped]);
 
-    // Preflight: a consumer's callback can burn arbitrary gas — the operator
+    // Preflight: a consumer's callback can burn arbitrary gas - the operator
     // pays it. Simulate + cap the cost before broadcasting the fulfill.
     await coordinator.fulfill.staticCall(requestId, output);
     const gasEst = await coordinator.fulfill.estimateGas(requestId, output);
     const gasCap = BigInt(process.env.FULFILL_GAS_CAP ?? "2000000");
     if (gasEst > gasCap) {
-      console.error(`#${requestId} fulfill needs ${gasEst} > cap ${gasCap} — refusing (gas-grief protection)`);
+      console.error(`#${requestId} fulfill needs ${gasEst} > cap ${gasCap} - refusing (gas-grief protection)`);
       pending.delete(requestId);
       return;
     }
@@ -111,7 +111,7 @@ async function serve(requestId, job) {
     pending.delete(requestId);
     console.log(`#${requestId} fulfilled`);
   } catch (e) {
-    // transient (RPC, nonce, backend) — retry next round; permanent reverts log loudly
+    // transient (RPC, nonce, backend) - retry next round; permanent reverts log loudly
     console.error(`#${requestId} serve error: ${e.message?.slice(0, 200)}`);
   } finally {
     inflight.delete(requestId);
@@ -124,7 +124,7 @@ const head0 = await provider.getBlockNumber();
 // On boot, re-scan a lookback window so requests left Pending through a
 // restart (or missed while down) are rediscovered from the event log.
 let lastBlock = Math.max(0, (state.lastBlock ?? head0) - lookback);
-console.log(`node up — operator ${operator.address}, coordinator ${cfg.coordinator}, rescanning from block ${lastBlock}`);
+console.log(`node up - operator ${operator.address}, coordinator ${cfg.coordinator}, rescanning from block ${lastBlock}`);
 
 async function tick() {
   try {
@@ -156,11 +156,11 @@ if (process.env.SENTINEL_ADDRESS) {
       console.log(`sentinel tick tx ${tx.hash}`);
       await tx.wait();
     } catch (e) {
-      // TooEarly / underfunded are routine — log once per fire, keep going
+      // TooEarly / underfunded are routine - log once per fire, keep going
       console.log(`sentinel tick skipped: ${(e.shortMessage ?? e.message)?.slice(0, 80)}`);
     }
   };
   setInterval(fire, everyMs);
   console.log(`sentinel keeper armed on ${await sentinel.getAddress()} every ${everyMs}ms`);
-  // don't fire immediately — respect the on-chain interval
+  // don't fire immediately - respect the on-chain interval
 }

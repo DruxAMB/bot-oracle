@@ -24,9 +24,9 @@ const ok = await o.verifyResult(requestId, text);             // recompute outpu
 
 | Method | What it does |
 |---|---|
-| `OracleClient.modelId("echo:v1")` | `keccak256("name:version")` — the registry's id convention |
+| `OracleClient.modelId("echo:v1")` | `keccak256("name:version")`: the registry's id convention |
 | `OracleClient.encodePrompt(text)` | ABI-encode a plain-text prompt for `input` |
-| `priceOf(modelId)` | Model's per-query price in wei — pass as `value` |
+| `priceOf(modelId)` | Model's per-query price in wei; pass as `value` |
 | `request({modelId, prompt \| input, callbackContract?, callbackGas?, value})` | Sends the paid request; returns `{ requestId, txHash }`. Throws on revert or missing event. |
 | `awaitResult(requestId, {timeoutMs, pollMs})` | Resolves `{ requestId, status, outputHash, operator }` on FULFILLED/RESOLVED; throws on REFUNDED/DISPUTED/timeout |
 | `getResult(requestId)` | Decoded string output from the `RequestFulfilled` event |

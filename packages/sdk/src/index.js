@@ -1,4 +1,4 @@
-// @bot-oracle/sdk — thin client over the OracleCoordinator.
+// @bot-oracle/sdk - thin client over the OracleCoordinator.
 // request() escrows the fee, awaitResult() resolves when the node fulfills,
 // verifyResult() recomputes the on-chain outputHash.
 import { JsonRpcProvider, Contract, AbiCoder, keccak256, toUtf8Bytes } from "ethers";
@@ -31,7 +31,7 @@ export class OracleClient {
     this.abi = abi;
   }
 
-  /** modelId helpers — ids are keccak256("name:version") per convention. */
+  /** modelId helpers - ids are keccak256("name:version") per convention. */
   static modelId(name) {
     return keccak256(toUtf8Bytes(name));
   }
@@ -51,7 +51,7 @@ export class OracleClient {
     const tx = await this.coordinator.request(modelId, payload, cb, callbackGas, { value });
     const receipt = await tx.wait();
     if (!receipt || receipt.status === 0) {
-      throw new Error(`request tx reverted — check ${tx.hash} on the explorer`);
+      throw new Error(`request tx reverted - check ${tx.hash} on the explorer`);
     }
     const log = receipt.logs
       .map((l) => { try { return this.coordinator.interface.parseLog(l); } catch { return null; } })
@@ -81,7 +81,7 @@ export class OracleClient {
     throw new Error(`request ${requestId} not fulfilled within ${timeoutMs}ms`);
   }
 
-  /** Model's per-query price — pass as `value` to request(). */
+  /** Model's per-query price - pass as `value` to request(). */
   async priceOf(modelId) {
     if (!this.models) throw new Error("models registry not configured");
     const m = await this.models.models(modelId);

@@ -9,7 +9,7 @@ export const NET = {
   models: process.env.NEXT_PUBLIC_MODELS ?? "0xb208fb3016c14b0946bf3FBbe1Def28d72F63193",
   registry: process.env.NEXT_PUBLIC_REGISTRY ?? "0xf22dA276EAA3c4de433115a95111907A6338D3A5",
   sentinel: process.env.NEXT_PUBLIC_SENTINEL ?? "0x1ea8e8429Ecae0Dfa8dEbb93983DDe93EA31a014",
-  // Superseded v1 coordinator — read so the stats reflect total history,
+  // Superseded v1 coordinator - read so the stats reflect total history,
   // not just the current deployment.
   legacyCoordinator: process.env.NEXT_PUBLIC_LEGACY_COORDINATOR ?? "0x7F7e5256cA568B981e1a09642d8F756D9c89F706",
 };
@@ -100,7 +100,7 @@ const EMPTY: DashData = {
 
 export async function loadDash(): Promise<DashData> {
   try {
-    // staticNetwork: chainId is hardcoded — skips ethers' startup
+    // staticNetwork: chainId is hardcoded - skips ethers' startup
     // detect call (one fewer RPC round-trip per cold SSR render).
     const p = new JsonRpcProvider(NET.rpc, NET.chainId, { staticNetwork: true });
     const coord = new Contract(NET.coordinator, COORD_ABI, p);
@@ -124,7 +124,7 @@ export async function loadDash(): Promise<DashData> {
         sent.lastTickAt().catch(() => 0n),
       ]);
 
-    // legacy v1 coordinator — its own counter/fees, additive to the totals
+    // legacy v1 coordinator - its own counter/fees, additive to the totals
     const [legacyNext, legacyFees] = await Promise.all([
       legacyCoord.nextRequestId().catch(() => 1n),
       legacyCoord.accruedProtocolFees().catch(() => 0n),
@@ -193,7 +193,7 @@ export async function loadDash(): Promise<DashData> {
     return {
       block,
       totalRequests: nextId - 1n,
-      // exact count via enumeration — the log query is windowed
+      // exact count via enumeration - the log query is windowed
       fulfilled: await Promise.all(
         Array.from({ length: Math.min(Number(nextId - 1n), 500) }, (_, i) =>
           coord.requests(i + 1).then((r) => Number(r.status))

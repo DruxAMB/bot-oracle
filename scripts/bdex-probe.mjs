@@ -1,4 +1,4 @@
-// Read-only BDEX probe — verifies DEX contracts respond and measures REAL pool liquidity.
+// Read-only BDEX probe - verifies DEX contracts respond and measures REAL pool liquidity.
 // No funds needed. Covers testnet (968) and mainnet (677).
 import { JsonRpcProvider, Contract, formatUnits, formatEther } from "ethers";
 

@@ -14,15 +14,15 @@ The minimal contract + flow for consuming the BOT Chain AI oracle. Clone, deploy
 ## The pattern (see `Consumer.sol`)
 
 1. **Deploy** your consumer with the coordinator address, a `modelId`
-   (`keccak256("name:version")` — e.g. `keccak256("echo:v1")` on testnet), and
+   (`keccak256("name:version")`, e.g. `keccak256("echo:v1")` on testnet), and
    the model's price in wei.
-2. **Fund** it — the contract pays each query's fee from its own balance.
-3. **Call** `ask(input)` — input is `abi.encode(string)` of your prompt for the
+2. **Fund** it: the contract pays each query's fee from its own balance.
+3. **Call** `ask(input)`: input is `abi.encode(string)` of your prompt for the
    stock models.
-4. **Receive** `onOracleResult(requestId, output)` — the coordinator calls back
+4. **Receive** `onOracleResult(requestId, output)`: the coordinator calls back
    within a few seconds; `output` is `abi.encode(string)`.
 
-Gas guidance: give the callback `300_000` gas minimum if you store results —
+Gas guidance: give the callback `300_000` gas minimum if you store results -
 string SSTOREs scale with length. If the callback reverts the fulfill still
 lands (`CallbackResult` event = false) and your result is retrievable from the
 `RequestFulfilled` event.

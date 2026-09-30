@@ -8,7 +8,7 @@ import {ReentrancyGuard} from "openzeppelin-contracts/utils/ReentrancyGuard.sol"
 /// v1 runs a single operator (us); the registry already carries the stake/slash/
 /// unbonding machinery so v2 can open registration without a contract migration.
 /// Trust model is documented honestly: operators are slashable by the arbitrator
-/// (owner for v1), NOT by trustless fraud proofs — that's the roadmap.
+/// (owner for v1), NOT by trustless fraud proofs - that's the roadmap.
 contract OperatorRegistry is Ownable, ReentrancyGuard {
     struct Operator {
         uint256 stake;
@@ -56,7 +56,7 @@ contract OperatorRegistry is Ownable, ReentrancyGuard {
         return operators[a].stake >= minStake && operators[a].unstakeRequestedAt == 0;
     }
 
-    /// @notice Begin unbonding — operator stops being active immediately, stake
+    /// @notice Begin unbonding - operator stops being active immediately, stake
     /// becomes withdrawable after unbondingPeriod.
     function requestUnstake() external {
         Operator storage op = operators[msg.sender];
@@ -82,7 +82,7 @@ contract OperatorRegistry is Ownable, ReentrancyGuard {
     }
 
     /// @notice Slash an operator's stake; sends the slashed amount to `to`
-    /// (arbitrator decides destination — challenger bounty, requester refund, treasury).
+    /// (arbitrator decides destination - challenger bounty, requester refund, treasury).
     /// Callable by owner or the authorized slasher contract.
     function slash(address operator, uint256 amount, address to) external nonReentrant {
         require(msg.sender == owner() || msg.sender == slasher, "not slasher");

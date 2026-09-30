@@ -37,7 +37,7 @@ const wallet = new Wallet(burner.privateKey, provider);
 const bal = await provider.getBalance(wallet.address);
 console.log(`balance: ${bal} wei (${Number(bal) / 1e18} tBOT)`);
 if (bal === 0n) {
-  console.log("UNFUNDED — claim tBOT at https://faucet.botchain.ai/en/basic then re-run.");
+  console.log("UNFUNDED - claim tBOT at https://faucet.botchain.ai/en/basic then re-run.");
   process.exit(1);
 }
 
