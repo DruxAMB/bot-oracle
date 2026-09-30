@@ -249,7 +249,7 @@ export default async function Home() {
         <div className="grid md:grid-cols-2 gap-4 mb-8">
           <section aria-labelledby="integrate-h" className="min-w-0 rounded-lg border border-border p-5">
             <h2 id="integrate-h" className="text-sm font-medium text-secondary mb-3">Use the oracle</h2>
-            <p className="text-xs text-muted-foreground mb-2">HTTP gateway — one call, on-chain round trip:</p>
+            <p className="text-xs text-muted-foreground mb-2">HTTP gateway — one call, on-chain round trip (run your own: <code className="text-steel">gateway/</code> in the repo):</p>
             <pre className="overflow-x-auto rounded bg-background border border-border p-3 text-xs text-secondary">{`curl -X POST http://localhost:8791/v1/query \\
   -H 'content-type: application/json' \\
   -H 'x-api-key: <issued-key>' \\
