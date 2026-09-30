@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 96" width="760" height="96">
+  <!-- bot-oracle README banner: void band so it reads on light and dark UIs -->
+  <rect width="760" height="96" rx="2" fill="#0a0a0a"/>
+  <rect x="0.75" y="0.75" width="758.5" height="94.5" rx="2" fill="none" stroke="#3a3a3a" stroke-width="1.5"/>
+  <rect x="0.75" y="0.75" width="2" height="94.5" fill="#da5c2c"/>
+  <rect x="24" y="24" width="48" height="48" rx="2" fill="#111111" stroke="#3a3a3a" stroke-width="1.5"/>
+  <path d="M39 39.5 L47.5 48 L39 56.5" fill="none" stroke="#eeeeee" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="51" y1="56.5" x2="62" y2="56.5" stroke="#eeeeee" stroke-width="3" stroke-linecap="round"/>
+  <text x="92" y="52" font-family="ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace" font-size="26" font-weight="600" letter-spacing="-0.5" fill="#eeeeee">bot-oracle</text>
+  <text x="92" y="74" font-family="ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace" font-size="13" fill="#7e7e7e">AI compute oracle · BOT Chain</text>
+  <text x="736" y="52" text-anchor="end" font-family="ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace" font-size="13" fill="#da5c2c">&gt;_ ask → pay → answer</text>
+</svg>

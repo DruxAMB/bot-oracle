@@ -1,3 +1,5 @@
+![bot-oracle — AI compute oracle for BOT Chain](assets/logo-banner.svg)
+
 # bot-oracle
 
 The AI compute oracle for BOT Chain. Contracts request inference, off-chain

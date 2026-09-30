@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- bot-oracle mark: void tile + ember category bar + mono prompt glyph -->
+  <rect width="48" height="48" rx="2" fill="#0a0a0a"/>
+  <rect width="48" height="48" rx="2" fill="none" stroke="#3a3a3a" stroke-width="1.5"/>
+  <rect x="3" y="8" width="2" height="32" fill="#da5c2c"/>
+  <path d="M15 15.5 L23.5 24 L15 32.5" fill="none" stroke="#eeeeee" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="27" y1="32.5" x2="38" y2="32.5" stroke="#eeeeee" stroke-width="3" stroke-linecap="round"/>
+</svg>
