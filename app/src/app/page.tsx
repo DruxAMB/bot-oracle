@@ -71,7 +71,16 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
           <header className="mb-8 flex flex-wrap items-center gap-3 justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">bot-oracle</h1>
+              <h1 className="flex items-center gap-2.5 text-2xl font-semibold text-foreground">
+                <svg width="28" height="28" viewBox="0 0 48 48" aria-hidden="true" className="shrink-0">
+                  <rect width="48" height="48" rx="2" fill="#0a0a0a"/>
+                  <rect width="48" height="48" rx="2" fill="none" stroke="#3a3a3a" strokeWidth="1.5"/>
+                  <rect x="3" y="8" width="2" height="32" fill="#da5c2c"/>
+                  <path d="M15 15.5 L23.5 24 L15 32.5" fill="none" stroke="#eeeeee" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                  <line x1="27" y1="32.5" x2="38" y2="32.5" stroke="#eeeeee" strokeWidth="3" strokeLinecap="round"/>
+                </svg>
+                bot-oracle
+              </h1>
               <p className="text-sm text-muted-foreground">
                 AI compute oracle · {NET.name} · block {d.block || "—"}
               </p>
