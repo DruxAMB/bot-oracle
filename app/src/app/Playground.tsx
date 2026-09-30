@@ -69,7 +69,7 @@ export default function Playground({
     // Generation guard: a superseded poll (stale resume, or a newer send)
     // must not write phase or touch pg-pending.
     const gen = ++pollGen.current;
-    const reader = new JsonRpcProvider(rpc, chainId);
+    const reader = new JsonRpcProvider(rpc, chainId, { staticNetwork: true });
     const ro = new Contract(coordinator, COORD_ABI, reader);
     const deadline = Date.now() + 180_000;
     while (Date.now() < deadline) {

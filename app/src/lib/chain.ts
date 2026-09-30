@@ -100,7 +100,9 @@ const EMPTY: DashData = {
 
 export async function loadDash(): Promise<DashData> {
   try {
-    const p = new JsonRpcProvider(NET.rpc, NET.chainId);
+    // staticNetwork: chainId is hardcoded — skips ethers' startup
+    // detect call (one fewer RPC round-trip per cold SSR render).
+    const p = new JsonRpcProvider(NET.rpc, NET.chainId, { staticNetwork: true });
     const coord = new Contract(NET.coordinator, COORD_ABI, p);
     const reg = new Contract(NET.registry, REG_ABI, p);
     const sent = new Contract(NET.sentinel, SENT_ABI, p);
