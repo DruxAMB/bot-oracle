@@ -4,6 +4,7 @@ import Playground from "./Playground";
 import AutoRefresh from "./AutoRefresh";
 import { WalletProvider, ConnectWalletButton } from "./Wallet";
 import Toaster from "./Toaster";
+import CopyCommand from "./CopyCommand";
 import Markdown from "./Markdown";
 import ResultModal from "./ResultModal";
 
@@ -17,7 +18,7 @@ const short = (a: string) => (a && a.length > 12 ? `${a.slice(0, 6)}…${a.slice
 const ago = (s: number) =>
   (s < 0 ? "now" : s < 60 ? `${s}s ago` : s < 3600 ? `${Math.floor(s / 60)}m ago` : `${Math.floor(s / 3600)}h ago`);
 
-const ext = (href: string, text: string, className = "text-secondary hover:underline") => (
+const ext = (href: string, text: string, className = "text-secondary underline decoration-dotted underline-offset-2 hover:text-foreground") => (
   <a className={className} href={href} target="_blank" rel="noopener noreferrer">
     {text}
   </a>
@@ -206,7 +207,7 @@ export default async function Home() {
             {ext(
               `${NET.explorer}/address/${NET.coordinator}`,
               "view all on explorer ↗",
-              "text-xs text-muted-foreground hover:text-secondary"
+              "text-xs text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary"
             )}
           </div>
           <div className="rounded-lg border border-border overflow-x-auto">
@@ -270,7 +271,10 @@ export default async function Home() {
   -H 'content-type: application/json' \\
   -H 'x-api-key: <issued-key>' \\
   -d '{"model":"echo:v1","prompt":"hello"}'`}</pre>
-            <p className="text-xs text-muted-foreground mt-3 mb-2">JS SDK — <code className="text-steel">npm i https://raw.githubusercontent.com/DruxAMB/bot-oracle/main/dist/bot-oracle-sdk-0.1.1.tgz</code> (registry publish pending):</p>
+            <p className="text-xs text-muted-foreground mt-3 mb-2">JS SDK (registry publish pending — install from the repo tarball):</p>
+            <div className="mb-2">
+              <CopyCommand cmd="npm i https://raw.githubusercontent.com/DruxAMB/bot-oracle/main/dist/bot-oracle-sdk-0.1.1.tgz" />
+            </div>
             <pre className="overflow-x-auto rounded bg-background border border-border p-3 text-xs text-secondary">{`import { OracleClient } from "@bot-oracle/sdk";
 const o = new OracleClient({ rpcUrl, chainId: 968, coordinator, models, signer });
 const value = await o.priceOf(OracleClient.modelId("echo:v1"));
@@ -287,7 +291,7 @@ const text = await o.getResult(requestId);`}</pre>
               {deployments.map((x) => (
                 <li key={x.addr} className="flex items-baseline justify-between gap-2 text-sm">
                   <span className="text-secondary">{x.name}</span>
-                  {ext(`${NET.explorer}/address/${x.addr}`, short(x.addr), "font-mono text-xs text-secondary hover:underline")}
+                  {ext(`${NET.explorer}/address/${x.addr}`, short(x.addr), "font-mono text-xs text-secondary underline decoration-dotted underline-offset-2 hover:text-foreground")}
                 </li>
               ))}
             </ul>

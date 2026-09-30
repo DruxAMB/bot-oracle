@@ -217,6 +217,12 @@ export default function Playground({
             request #{phase.requestId} in flight…
           </span>
         )}
+        <a
+          href="#integrate-h"
+          className="text-xs text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary"
+        >
+          integrate the SDK ↓
+        </a>
         <button
           onClick={() => setOpen(true)}
           className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-primary"
