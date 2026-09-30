@@ -48,3 +48,12 @@ curl -X POST localhost:8791/v1/query -H "x-api-key: yourkey" \
 Single staked operator, slashable via a challenge window — honest
 centralization, documented. Multi-operator consensus then TEE/opML proofs are
 the roadmap. See `SPEC.md` §3.4.
+
+## What's next
+
+| Item | When |
+|---|---|
+| Dedicated VPS for node + gateway (replaces local hosting; also unlocks a public gateway endpoint) | Soon — gated on BOT Chain ecosystem funding |
+| `@bot-oracle/sdk` on the npm registry | Oct 2, 2026 (account suspension lifts — tarball install works now) |
+| Second operator + challenge/slashing exercised | Phase 4 |
+| Mainnet deploy on chain 677 | Phase 3 — `MAINNET-GATE` in SPEC.md |

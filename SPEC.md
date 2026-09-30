@@ -324,8 +324,10 @@ Deploy + verify contracts on scan.botchain.ai, Sentinel live, directory
 submission, leaderboard registration, launch notes.
 
 **Phase 4 — Decentralize + grant package**
-Second operator (ourselves on separate infra at minimum), challenge/slashing
-exercised on testnet, TEE/opML doc, grant application with evidence.
+Second operator (ourselves on separate infra at minimum — dedicated VPS for
+node + gateway is the planned move, gated on BOT Chain ecosystem funding, not
+a fixed date), challenge/slashing exercised on testnet, TEE/opML doc, grant
+application with evidence.
 
 Every phase ends only when its checklist passes against the *deployed* system —
 same discipline as the hackathon contract: performed, observed, reported.
