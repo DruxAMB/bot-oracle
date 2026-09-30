@@ -16,10 +16,10 @@ const cfg = {
   pollMs: Number(process.env.POLL_INTERVAL_MS ?? "3000"),
   stateFile: process.env.STATE_FILE ?? "./state/last-block.json",
   confirmBlocks: Number(process.env.CONFIRM_BLOCKS ?? "1"),
-  openai: {
-    apiKey: process.env.OPENAI_API_KEY,
-    baseUrl: process.env.OPENAI_BASE_URL,
-    model: process.env.OPENAI_MODEL,
+  llm: {
+    apiKey: process.env.LLM_API_KEY,
+    baseUrl: process.env.LLM_BASE_URL,
+    model: process.env.LLM_MODEL,
   },
 };
 if (!cfg.operatorKey) throw new Error("OPERATOR_KEY env required");

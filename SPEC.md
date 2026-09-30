@@ -300,7 +300,7 @@ normalizes hex-string inputs to bytes — both found by exercising).
 (`0x54e1695f…`) with a real-data report — `latestReport` reads live block,
 gas, BDEX WBOT/USDT reserves (519.7 WBOT / 0 USDT), oracle stats. Backend:
 `node/src/backends.js` `sentinel:` — builds the snapshot via RPC, calls the
-configured OpenAI-compatible LLM when `OPENAI_API_KEY` is set, else emits a
+configured OpenAI-compatible LLM when `LLM_API_KEY` is set, else emits a
 labeled deterministic report (no fake inference). Node runs detached via
 `node --env-file=.env.testnet src/index.js` (env gitignored).
 

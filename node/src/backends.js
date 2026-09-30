@@ -101,7 +101,7 @@ async function sentinel(prompt, cfg) {
     `- bot-oracle: ${s.requests} requests served, ${s.feesBot} BOT accrued fees`,
   ].join("\n");
 
-  if (!cfg.openai?.apiKey) return deterministicReport(prompt, s);
+  if (!cfg.llm?.apiKey) return deterministicReport(prompt, s);
 
   const llmPrompt =
     "You are Sentinel, an autonomous market-intelligence agent on BOT Chain. " +
@@ -111,12 +111,12 @@ async function sentinel(prompt, cfg) {
     "\n\nANALYST REQUEST:\n" + prompt;
   try {
     const text = await openaiCompat(llmPrompt, {
-      apiKey: cfg.openai.apiKey,
-      baseUrl: cfg.openai.baseUrl ?? "https://api.openai.com/v1",
-      model: cfg.openai.model || "gpt-4o-mini",
+      apiKey: cfg.llm.apiKey,
+      baseUrl: cfg.llm.baseUrl ?? "https://api.openai.com/v1",
+      model: cfg.llm.model || "gpt-4o-mini",
     });
     // own line for the audit label — a mid-paragraph prefix breaks `###` heading parse
-    return `[sentinel:${cfg.openai.model || "gpt-4o-mini"}]\n\n${text.trim()}`;
+    return `[sentinel:${cfg.llm.model || "gpt-4o-mini"}]\n\n${text.trim()}`;
   } catch (e) {
     // LLM down/quota exhausted — degrade to the deterministic report rather
     // than leaving the request pending until timeout. Label stays honest.
@@ -153,11 +153,11 @@ export async function runInference(backend, inputBytes, cfg) {
     case "sentinel":
       return sentinel(prompt, cfg);
     case "openai":
-      if (!cfg.openai?.apiKey) throw new Error("OPENAI_API_KEY not configured");
+      if (!cfg.llm?.apiKey) throw new Error("LLM_API_KEY not configured");
       return openaiCompat(prompt, {
-        apiKey: cfg.openai.apiKey,
-        baseUrl: cfg.openai.baseUrl ?? "https://api.openai.com/v1",
-        model: backend.slice("openai:".length) || cfg.openai.model || "gpt-4o-mini",
+        apiKey: cfg.llm.apiKey,
+        baseUrl: cfg.llm.baseUrl ?? "https://api.openai.com/v1",
+        model: backend.slice("openai:".length) || cfg.llm.model || "gpt-4o-mini",
       });
     default:
       throw new Error(`unknown backend kind: ${kind}`);
