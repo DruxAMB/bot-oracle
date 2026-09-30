@@ -170,7 +170,7 @@ export async function loadDash(): Promise<DashData> {
       })
     );
 
-    const recent = sentLogs.slice(-15).reverse();
+    const recent = sentLogs.slice(-10).reverse();
     const now = Math.floor(Date.now() / 1000);
     const rows: RequestRow[] = await Promise.all(
       recent.map(async (l) => {

@@ -201,7 +201,14 @@ export default async function Home() {
         </div>
 
         <section aria-labelledby="feed-h" className="mb-8">
-          <h2 id="feed-h" className="text-sm font-medium text-secondary mb-3">Recent requests</h2>
+          <div className="mb-3 flex items-baseline justify-between gap-2">
+            <h2 id="feed-h" className="text-sm font-medium text-secondary">Recent requests</h2>
+            {ext(
+              `${NET.explorer}/address/${NET.coordinator}`,
+              "view all on explorer ↗",
+              "text-xs text-muted-foreground hover:text-secondary"
+            )}
+          </div>
           <div className="rounded-lg border border-border overflow-x-auto">
             <table className="w-full text-sm min-w-[640px]">
               <thead className="bg-elevated text-muted-foreground text-xs">
