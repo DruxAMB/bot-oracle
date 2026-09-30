@@ -303,7 +303,10 @@ const text = await o.getResult(requestId);`}</pre>
 
         <footer className="text-xs text-steel">
           Server-rendered from {NET.rpc} · single trusted operator (v1) ·{" "}
-          {ext("https://github.com/DruxAMB/bot-oracle", "source ↗", "text-muted-foreground hover:underline")}
+          <a href="/whitepaper" className="text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary">
+            whitepaper
+          </a>{" "}·{" "}
+          {ext("https://github.com/DruxAMB/bot-oracle", "source ↗", "text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary")}
         </footer>
         </div>
         <Toaster />

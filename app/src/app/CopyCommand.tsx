@@ -33,7 +33,7 @@ export default function CopyCommand({ cmd }: { cmd: string }) {
       <button
         type="button"
         onClick={copy}
-        className="shrink-0 text-xs text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary"
+        className="shrink-0 text-xs text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary print:hidden"
       >
         {copied ? "copied ✓" : "copy"}
       </button>
