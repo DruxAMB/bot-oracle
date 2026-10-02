@@ -312,6 +312,14 @@ const text = await o.getResult(requestId);`}</pre>
             whitepaper
           </a>{" "}·{" "}
           {ext("https://github.com/DruxAMB/bot-oracle", "source ↗", "text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary")}
+          <div className="mt-2">
+            Built on{" "}
+            {ext("https://botchain.ai", "BOT Chain ↗", "text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary")}
+            {" "}·{" "}
+            {ext("https://scan.botchain.ai", "mainnet explorer ↗", "text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary")}
+            {" "}·{" "}
+            {ext("https://x.com/botoracle_", "@botoracle_ ↗", "text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary")}
+          </div>
         </footer>
         </div>
         <Toaster />

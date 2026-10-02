@@ -360,6 +360,9 @@ const text = await o.getResult(requestId);`}</pre>
           <Link href="/" className="underline decoration-dotted underline-offset-2 hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary">
             live dashboard
           </Link>
+          <div className="mt-2">
+            Built on {a("https://botchain.ai", "BOT Chain ↗")} · {a("https://scan.botchain.ai", "mainnet explorer ↗")} · {a("https://x.com/botoracle_", "@botoracle_ ↗")}
+          </div>
         </footer>
       </div>
     </main>
