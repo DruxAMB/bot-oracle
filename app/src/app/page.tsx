@@ -268,7 +268,7 @@ export default async function Home() {
           </div>
         </section>
 
-        <div className="grid md:grid-cols-2 gap-4 mb-8">
+        <div className="mb-8">
           <section aria-labelledby="integrate-h" className="min-w-0 rounded-lg border border-border p-5">
             <h2 id="integrate-h" className="text-sm font-medium text-secondary mb-3">Use the oracle</h2>
             <p className="text-xs text-muted-foreground mb-2">HTTP gateway · one call, on-chain round trip (run your own: <code className="text-steel">gateway/</code> in the repo):</p>
@@ -287,26 +287,25 @@ const { requestId } = await o.request({ modelId: OracleClient.modelId("echo:v1")
 await o.awaitResult(requestId);
 const text = await o.getResult(requestId);`}</pre>
           </section>
+        </div>
 
-          <section aria-labelledby="deploy-h" className="min-w-0 rounded-lg border border-border p-5">
-            <h2 id="deploy-h" className="text-sm font-medium text-secondary mb-3">
+        <footer className="border-t border-border pt-5 text-xs text-steel">
+          <div className="mb-4" aria-labelledby="deploy-h">
+            <div id="deploy-h" className="mb-2 text-muted-foreground">
               Deployments · verified on explorer
-            </h2>
-            <ul className="space-y-2">
+            </div>
+            <ul className="grid gap-x-10 gap-y-1.5 sm:grid-cols-2">
               {deployments.map((x) => (
-                <li key={x.addr} className="flex items-baseline justify-between gap-2 text-sm">
+                <li key={x.addr} className="flex items-baseline justify-between gap-2">
                   <span className="text-secondary">{x.name}</span>
-                  {ext(`${NET.explorer}/address/${x.addr}`, short(x.addr), "font-mono text-xs text-secondary underline decoration-dotted underline-offset-2 hover:text-foreground")}
+                  {ext(`${NET.explorer}/address/${x.addr}`, short(x.addr), "font-mono text-secondary underline decoration-dotted underline-offset-2 hover:text-foreground")}
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-xs text-steel">
+            <p className="mt-2.5">
               Chain {NET.chainId} · all four core contracts source-verified on Blockscout.
             </p>
-          </section>
-        </div>
-
-        <footer className="text-xs text-steel">
+          </div>
           Server-rendered from {NET.rpc} · single trusted operator (v1) ·{" "}
           <a href="/whitepaper" className="text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary">
             whitepaper
