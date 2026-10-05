@@ -23,6 +23,30 @@ const COORD_ABI = [
 const abi = AbiCoder.defaultAbiCoder();
 const short = (a: string) => (a && a.length > 12 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a);
 
+// Map raw ethers/RPC failures to the thing the user actually did wrong (or
+// didn't). Anything unrecognized falls through to a trimmed raw message.
+function friendlyError(e: any): string {
+  const code = e?.code;
+  const msg: string = e?.shortMessage ?? e?.info?.error?.message ?? e?.message ?? "";
+  const lower = msg.toLowerCase();
+  if (code === 4001 || code === "ACTION_REJECTED" || lower.includes("user rejected")) {
+    return "Transaction canceled in your wallet";
+  }
+  if (code === "INSUFFICIENT_FUNDS" || lower.includes("insufficient funds")) {
+    return "Not enough BOT - the fee plus gas must fit your balance";
+  }
+  if (code === -32002 || lower.includes("already pending")) {
+    return "A request is already open in your wallet - approve or reject it there";
+  }
+  if (lower.includes("wrongfee") || lower.includes("wrong fee")) {
+    return "Model price changed - reload the page and retry";
+  }
+  if (lower.includes("network") || lower.includes("chain")) {
+    return "Wallet is on the wrong network - switch back to BOT Chain and retry";
+  }
+  return msg.slice(0, 160) || "request failed";
+}
+
 type ModelOpt = { modelId: string; label: string; backend: string; priceWei: string; active: boolean };
 type Phase =
   | { s: "idle" }
@@ -113,7 +137,11 @@ export default function Playground({
         if (status === 2 || status === 3) {
           if (gen !== pollGen.current) return;
           localStorage.removeItem("pg-pending");
-          throw new Error(`request ended: status ${status}`);
+          throw new Error(
+            status === 2
+              ? "request ended: refunded - the fee returned to your wallet"
+              : "request ended: challenged and under dispute - see the explorer"
+          );
         }
       } catch (e: any) {
         if (e?.message?.startsWith("request ended")) throw e;
@@ -122,7 +150,9 @@ export default function Playground({
     }
     if (gen !== pollGen.current) return;
     localStorage.removeItem("pg-pending");
-    const msg = `Request #${requestId} still pending after 180s; check the explorer.`;
+    const msg =
+      `Request #${requestId} still pending after 180s - the operator may be down. ` +
+      `If it isn't served within the timeout window your fee is reclaimable via refundIfTimedOut on the explorer.`;
     setPhase({ s: "error", message: msg });
     toast.error(msg);
   }
@@ -200,7 +230,7 @@ export default function Playground({
       if (e?.message?.startsWith("request ended")) pollGen.current++;
       localStorage.removeItem("pg-pending");
       wallet.refresh();
-      const msg = e?.shortMessage ?? e?.info?.error?.message ?? e?.message ?? "request failed";
+      const msg = friendlyError(e);
       setPhase({ s: "error", message: msg });
       toast.error(msg);
     }

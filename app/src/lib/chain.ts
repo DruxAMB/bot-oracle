@@ -39,6 +39,7 @@ const SENT_ABI = [
   "function modelId() view returns (bytes32)",
   "function minInterval() view returns (uint64)",
   "function lastTickAt() view returns (uint64)",
+  "function queryPrice() view returns (uint256)",
 ];
 
 const STATUS = ["Pending", "Fulfilled", "Refunded", "Disputed", "Resolved"] as const;
@@ -83,6 +84,7 @@ export type DashData = {
   sentinelReport: string;
   sentinelReportAt: number;
   sentinelBalance: bigint;
+  sentinelQueryPrice: bigint;
   sentinelMinInterval: number;
   sentinelLastTickAt: number;
   requests: RequestRow[];
@@ -99,7 +101,7 @@ export type DashData = {
 const EMPTY: DashData = {
   block: 0, totalRequests: 0n, fulfilled: 0, feesWei: 0n, operatorCount: 0n,
   minStake: 0n, models: [], operators: [], sentinelTicks: 0n, sentinelReport: "",
-  sentinelReportAt: 0, sentinelBalance: 0n, sentinelMinInterval: 0, sentinelLastTickAt: 0,
+  sentinelReportAt: 0, sentinelBalance: 0n, sentinelQueryPrice: 0n, sentinelMinInterval: 0, sentinelLastTickAt: 0,
   requests: [], legacyRequests: 0n, legacyFulfilled: 0, legacyFeesWei: 0n,
   uniquePayers: 0, contractConsumers: 0,
 };
@@ -115,7 +117,7 @@ export async function loadDash(): Promise<DashData> {
     const modelReg = new Contract(NET.models, MODELS_ABI, p);
     const legacyCoord = new Contract(NET.legacyCoordinator, COORD_ABI, p);
 
-    const [block, nextId, fees, ops, stake, ticks, report, reportAt, sentBal, sentInterval, sentLastTick] =
+    const [block, nextId, fees, ops, stake, ticks, report, reportAt, sentBal, sentInterval, sentLastTick, sentPrice] =
       await Promise.all([
         p.getBlockNumber(),
         coord.nextRequestId(),
@@ -128,6 +130,7 @@ export async function loadDash(): Promise<DashData> {
         p.getBalance(NET.sentinel).catch(() => 0n),
         sent.minInterval().catch(() => 0n),
         sent.lastTickAt().catch(() => 0n),
+        sent.queryPrice().catch(() => 0n),
       ]);
 
     // legacy v1 coordinator - its own counter/fees, additive to the totals
@@ -234,6 +237,7 @@ export async function loadDash(): Promise<DashData> {
       sentinelReport: report,
       sentinelReportAt: Number(reportAt),
       sentinelBalance: sentBal,
+      sentinelQueryPrice: sentPrice,
       sentinelMinInterval: Number(sentInterval),
       sentinelLastTickAt: Number(sentLastTick),
       requests: rows,

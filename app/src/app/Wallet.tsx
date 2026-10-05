@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { BrowserProvider, formatEther } from "ethers";
 import { toast } from "sonner";
 import WalletModal from "./WalletModal";
@@ -272,13 +272,18 @@ export function WalletProvider({
     };
   }, [refresh, provider]);
 
+  const openWalletModal = useCallback(() => setModalOpen(true), []);
+  // Memoize: a fresh object every render would re-render every consumer
+  // (Playground, modal, connect button) on any provider state change.
+  const ctx = useMemo<WalletCtxValue>(
+    () => ({
+      status, address, balance, connectError, provider, connect, disconnect, switchChain, refresh, openWalletModal,
+    }),
+    [status, address, balance, connectError, provider, connect, disconnect, switchChain, refresh, openWalletModal]
+  );
+
   return (
-    <WalletContext.Provider
-      value={{
-        status, address, balance, connectError, provider, connect, disconnect, switchChain, refresh,
-        openWalletModal: () => setModalOpen(true),
-      }}
-    >
+    <WalletContext.Provider value={ctx}>
       {children}
       {modalOpen && <WalletModal onClose={() => setModalOpen(false)} />}
     </WalletContext.Provider>

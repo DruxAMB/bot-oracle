@@ -14,6 +14,9 @@ const COORD_ABI = [
 const MODELS_ABI = ["function models(bytes32) view returns (uint256 priceWei, bytes32 containerHash, string backend, bool active)"];
 
 const abi = AbiCoder.defaultAbiCoder();
+const STATUS_NAME = ["Pending", "Fulfilled", "Refunded", "Disputed", "Resolved"];
+const friendlyStatus = (requestId, s) =>
+  `request ${requestId} ended in status ${s} (${STATUS_NAME[s] ?? "unknown"})`;
 
 export class OracleClient {
   /**
@@ -48,7 +51,26 @@ export class OracleClient {
   async request({ modelId, prompt, input, callbackContract = null, callbackGas = 0n, value }) {
     const payload = input ?? OracleClient.encodePrompt(prompt);
     const cb = callbackContract ?? "0x0000000000000000000000000000000000000000";
-    const tx = await this.coordinator.request(modelId, payload, cb, callbackGas, { value });
+    let tx;
+    try {
+      tx = await this.coordinator.request(modelId, payload, cb, callbackGas, { value });
+    } catch (e) {
+      // A wrong-fee/inactive request reverts with an opaque custom error - if
+      // the registry is configured, translate it into the real reason.
+      if (this.models) {
+        try {
+          const m = await this.models.models(modelId);
+          const sent = BigInt(value ?? 0n);
+          if (!m.active) throw new Error(`model ${modelId} is not active`);
+          if (m.priceWei !== sent)
+            throw new Error(`fee mismatch - model costs ${m.priceWei} wei, you sent ${sent} wei`);
+        } catch (e2) {
+          const msg = String(e2?.message ?? "");
+          if (msg.startsWith("model") || msg.startsWith("fee mismatch")) throw e2;
+        }
+      }
+      throw e;
+    }
     const receipt = await tx.wait();
     if (!receipt || receipt.status === 0) {
       throw new Error(`request tx reverted - check ${tx.hash} on the explorer`);
@@ -74,7 +96,7 @@ export class OracleClient {
         return { requestId, status: s, outputHash, operator: r.operator };
       }
       if (s === STATUS.REFUNDED || s === STATUS.DISPUTED) {
-        throw new Error(`request ${requestId} ended in status ${s}`);
+        throw new Error(friendlyStatus(requestId, s));
       }
       await new Promise((r2) => setTimeout(r2, pollMs));
     }
@@ -94,7 +116,7 @@ export class OracleClient {
     const r = await this.coordinator.requests(requestId);
     const s = Number(r.status);
     if (s !== STATUS.FULFILLED && s !== STATUS.RESOLVED) {
-      throw new Error(`request ${requestId} not fulfilled (status ${s})`);
+      throw new Error(`request ${requestId} not fulfilled - ${STATUS_NAME[s] ?? `status ${s}`}`);
     }
     const filter = this.coordinator.filters.RequestFulfilled(requestId);
     const logs = await this.coordinator.queryFilter(filter);

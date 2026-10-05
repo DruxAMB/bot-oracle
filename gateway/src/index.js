@@ -110,7 +110,16 @@ async function handleQuery(req, res, key) {
   charge(key);
   if (!wait) return json(res, 202, { requestId, requestTx: tx.hash });
 
-  const r = await waitFulfill(BigInt(requestId), cfg.syncTimeoutMs);
+  let r;
+  try {
+    r = await waitFulfill(BigInt(requestId), cfg.syncTimeoutMs);
+  } catch (e) {
+    // Attach the requestId so the caller can still poll /v1/result/<id> -
+    // a 504 without it strands the (paid) request.
+    e.status = e.status ?? 504;
+    e.payload = { requestId, requestTx: tx.hash };
+    throw e;
+  }
   const fulfilled = await coordinator.queryFilter(coordinator.filters.RequestFulfilled(requestId), 0);
   const output = fulfilled[0]?.args?.output;
   const text = output ? abi.decode(["string"], output)[0] : null;
@@ -199,7 +208,7 @@ const server = createServer(async (req, res) => {
     }
     json(res, 404, { error: "not found" });
   } catch (e) {
-    json(res, e.status ?? 500, { error: e.message?.slice(0, 200) });
+    json(res, e.status ?? 500, { ...(e.payload ?? {}), error: e.message?.slice(0, 200) });
   }
 });
 

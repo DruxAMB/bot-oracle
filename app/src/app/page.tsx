@@ -135,7 +135,9 @@ export default async function Home() {
                 {String(d.sentinelTicks)} ticks ·
                 {d.sentinelReportAt ? ` last report ${ago(now - d.sentinelReportAt)}` : " no reports yet"} ·
                 {nextTickIn != null && ` next tick in ~${Math.ceil(nextTickIn / 60)}m`} ·
-                balance {Number(formatEther(d.sentinelBalance)).toFixed(3)} BOT
+                {d.sentinelQueryPrice > 0n && d.sentinelBalance < d.sentinelQueryPrice
+                  ? "purse empty - needs top-up to keep ticking"
+                  : `balance ${Number(formatEther(d.sentinelBalance)).toFixed(3)} BOT`}
               </span>
             </summary>
             <div className="px-5 pb-5">
