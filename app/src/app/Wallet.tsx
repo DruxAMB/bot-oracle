@@ -96,6 +96,18 @@ export function WalletProvider({
       setAddress(accounts[0]);
       setBalance(await bp.getBalance(accounts[0]));
       setStatus("ready");
+      // count this wallet once per browser - telemetry, best effort
+      try {
+        const flag = `bo:counted:${chainId}:${accounts[0].toLowerCase()}`;
+        if (!localStorage.getItem(flag)) {
+          localStorage.setItem(flag, "1");
+          void fetch("/api/connects", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ address: accounts[0] }),
+          }).catch(() => {});
+        }
+      } catch {}
       return "ready";
     } catch {
       // transient wallet/RPC hiccup - keep prior state

@@ -2,6 +2,7 @@ import { loadDash, NET } from "@/lib/chain";
 import { formatEther, id } from "ethers";
 import Playground from "./Playground";
 import AutoRefresh from "./AutoRefresh";
+import ConnectsStat from "./ConnectsStat";
 import { WalletProvider, ConnectWalletButton } from "./Wallet";
 import Toaster from "./Toaster";
 import CopyCommand from "./CopyCommand";
@@ -44,14 +45,6 @@ export default async function Home() {
       sub: hasLegacy ? `${d.totalRequests} on v2 · ${d.legacyRequests} on v1` : "",
     },
     { label: "Fulfilled", value: String(d.fulfilled + d.legacyFulfilled), sub: "" },
-    {
-      label: "Unique payers",
-      value: String(d.uniquePayers),
-      sub:
-        d.contractConsumers > 0
-          ? `wallets · +${d.contractConsumers} contract consumer${d.contractConsumers > 1 ? "s" : ""}`
-          : "distinct wallets",
-    },
     {
       label: "Protocol fees",
       value: `${Number(formatEther(d.feesWei + d.legacyFeesWei)).toFixed(4)} BOT`,
@@ -114,7 +107,15 @@ export default async function Home() {
           </header>
 
         <section aria-label="network stats" className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-8">
-          {stats.map((s) => (
+          {stats.slice(0, 2).map((s) => (
+            <div key={s.label} className="rounded-lg border border-border bg-card p-4">
+              <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
+              <div className="text-xl font-medium text-foreground">{s.value}</div>
+              {s.sub && <div className="text-[11px] text-steel mt-0.5">{s.sub}</div>}
+            </div>
+          ))}
+          <ConnectsStat payers={d.uniquePayers} contracts={d.contractConsumers} />
+          {stats.slice(2).map((s) => (
             <div key={s.label} className="rounded-lg border border-border bg-card p-4">
               <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
               <div className="text-xl font-medium text-foreground">{s.value}</div>
