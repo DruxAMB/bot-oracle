@@ -53,8 +53,9 @@ export type RequestRow = {
   status: string;
   ageSec: number;
   operator: string | null;
-  txHash: string;
+  txHash: string | null;
   result: string | null;
+  legacy?: boolean;
 };
 
 export type ModelRow = {
@@ -139,11 +140,13 @@ export async function loadDash(): Promise<DashData> {
       legacyCoord.accruedProtocolFees().catch(() => 0n),
     ]);
     const legacyTotal = legacyNext - 1n;
+    // A legacy decode failure must not take the whole dashboard down -
+    // degrade to zero legacy contribution instead of the offline state.
     const legacyReqs = await Promise.all(
       Array.from({ length: Math.min(Number(legacyTotal), 500) }, (_, i) =>
         legacyCoord.requests(i + 1)
       )
-    );
+    ).catch(() => [] as Awaited<ReturnType<typeof legacyCoord.requests>>[]);
     const legacyFulfilled = legacyReqs.filter(
       (r) => Number(r.status) === 1 || Number(r.status) === 4
     ).length;
@@ -151,11 +154,14 @@ export async function loadDash(): Promise<DashData> {
     // Full-history event aggregation: one getLogs per topic from block 0.
     // Scales past the old 500-request enumeration cap - "Fulfilled" and payer
     // stats must stay accurate as request count grows.
-    const [sentLogs, fulfilledLogs, refundLogs, modelLogs] = await Promise.all([
+    const [sentLogs, fulfilledLogs, refundLogs, modelLogs, legacySentLogs, legacyFulfilledLogs] = await Promise.all([
       p.getLogs({ address: NET.coordinator, topics: [coord.interface.getEvent("RequestSent")!.topicHash], fromBlock: 0, toBlock: "latest" }),
       p.getLogs({ address: NET.coordinator, topics: [coord.interface.getEvent("RequestFulfilled")!.topicHash], fromBlock: 0, toBlock: "latest" }),
       p.getLogs({ address: NET.coordinator, topics: [coord.interface.getEvent("RequestRefunded")!.topicHash], fromBlock: 0, toBlock: "latest" }),
       p.getLogs({ address: NET.models, topics: [modelReg.interface.getEvent("ModelSet")!.topicHash], fromBlock: 0, toBlock: "latest" }),
+      // Legacy coordinator's own event history - powers the merged table rows.
+      p.getLogs({ address: NET.legacyCoordinator, topics: [coord.interface.getEvent("RequestSent")!.topicHash], fromBlock: 0, toBlock: "latest" }).catch(() => [] as Awaited<ReturnType<typeof p.getLogs>>),
+      p.getLogs({ address: NET.legacyCoordinator, topics: [coord.interface.getEvent("RequestFulfilled")!.topicHash], fromBlock: 0, toBlock: "latest" }).catch(() => [] as Awaited<ReturnType<typeof p.getLogs>>),
     ]);
     const refundedIds = new Set(refundLogs.map((l) => BigInt(l.topics[1]).toString()));
 
@@ -197,7 +203,10 @@ export async function loadDash(): Promise<DashData> {
       if (refundedIds.has(BigInt(l.topics[1]).toString())) continue;
       requesters.add(("0x" + l.topics[2].slice(26)).toLowerCase());
     }
-    for (const r of legacyReqs) requesters.add(r.requester.toLowerCase());
+    for (const r of legacyReqs) {
+      if (Number(r.status) === 2) continue; // refunded legacy requesters aren't payers
+      requesters.add(r.requester.toLowerCase());
+    }
     const codes = await Promise.all(
       [...requesters].map((a) => p.getCode(a).catch(() => "0x"))
     );
@@ -224,6 +233,39 @@ export async function loadDash(): Promise<DashData> {
       })
     );
 
+    // Legacy coordinator rows - same shape so the table merges seamlessly.
+    // legacyReqs already carries each request's struct; the two legacy log
+    // scans above supply tx hashes and decoded results.
+    const legacyTxById = new Map(
+      legacySentLogs.map((l) => [BigInt(l.topics[1]).toString(), l.transactionHash])
+    );
+    const legacyResults = new Map<string, string>();
+    for (const l of legacyFulfilledLogs) {
+      try {
+        const [, output] = abi.decode(["bytes32", "bytes"], l.data);
+        const [text] = abi.decode(["string"], output);
+        legacyResults.set(BigInt(l.topics[1]).toString(), text);
+      } catch {}
+    }
+    const legacyRows: RequestRow[] = legacyReqs.map((r, i) => {
+      const id = BigInt(i + 1);
+      return {
+        id,
+        requester: r.requester,
+        modelId: r.modelId,
+        fee: formatEther(r.fee),
+        status: STATUS[Number(r.status)] ?? "?",
+        ageSec: Math.max(0, now - Number(r.createdAt)),
+        operator: Number(r.status) === 1 ? r.operator : null,
+        txHash: legacyTxById.get(id.toString()) ?? null,
+        result: legacyResults.get(id.toString()) ?? null,
+        legacy: true,
+      };
+    });
+    const mergedRows = [...rows, ...legacyRows]
+      .sort((a, b) => a.ageSec - b.ageSec)
+      .slice(0, 15);
+
     return {
       block,
       totalRequests: nextId - 1n,
@@ -240,7 +282,7 @@ export async function loadDash(): Promise<DashData> {
       sentinelQueryPrice: sentPrice,
       sentinelMinInterval: Number(sentInterval),
       sentinelLastTickAt: Number(sentLastTick),
-      requests: rows,
+      requests: mergedRows,
       legacyRequests: legacyTotal,
       legacyFulfilled,
       legacyFeesWei: legacyFees,

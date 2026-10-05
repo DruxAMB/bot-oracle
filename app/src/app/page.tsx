@@ -42,7 +42,7 @@ export default async function Home() {
     {
       label: "Requests served",
       value: String(d.totalRequests + d.legacyRequests),
-      sub: hasLegacy ? `${d.totalRequests} on v2 · ${d.legacyRequests} on v1` : "",
+      sub: hasLegacy ? `${d.totalRequests} on v3 · ${d.legacyRequests} on v1` : "",
     },
     { label: "Fulfilled", value: String(d.fulfilled + d.legacyFulfilled), sub: "" },
     {
@@ -244,8 +244,13 @@ export default async function Home() {
               </thead>
               <tbody>
                 {d.requests.map((r) => (
-                  <tr key={String(r.id)} className="border-t border-border align-top">
-                    <td className="px-4 py-2 text-secondary">{String(r.id)}</td>
+                  <tr key={`${r.legacy ? "v1" : "v3"}-${String(r.id)}`} className="border-t border-border align-top">
+                    <td className="px-4 py-2 text-secondary">
+                      {String(r.id)}
+                      {r.legacy && (
+                        <span className="ml-1.5 text-[10px] text-steel border border-border rounded px-1 py-0.5 align-middle">v1</span>
+                      )}
+                    </td>
                     <td className="px-4 py-2 font-mono text-xs">
                       {ext(`${NET.explorer}/address/${r.requester}`, short(r.requester))}
                     </td>
@@ -261,12 +266,12 @@ export default async function Home() {
                         {r.status}
                       </span>
                       {r.result && (
-                        <ResultModal requestId={r.id.toString()} result={r.result} />
+                        <ResultModal requestId={r.legacy ? `${r.id} (v1)` : r.id.toString()} result={r.result} />
                       )}
                     </td>
                     <td className="px-4 py-2 text-muted-foreground">{ago(r.ageSec)}</td>
                     <td className="px-4 py-2 font-mono text-xs">
-                      {ext(`${NET.explorer}/tx/${r.txHash}`, short(r.txHash))}
+                      {r.txHash ? ext(`${NET.explorer}/tx/${r.txHash}`, short(r.txHash)) : "-"}
                     </td>
                   </tr>
                 ))}
