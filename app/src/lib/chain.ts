@@ -5,13 +5,13 @@ export const NET = {
   rpc: process.env.NEXT_PUBLIC_RPC_URL ?? "https://rpc.botchain.ai",
   chainId: Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? "677"),
   explorer: process.env.NEXT_PUBLIC_EXPLORER ?? "https://scan.botchain.ai",
-  coordinator: process.env.NEXT_PUBLIC_COORDINATOR ?? "0x8f487264E1B183F588CAc678D000754D3bd9B07E",
-  models: process.env.NEXT_PUBLIC_MODELS ?? "0x1C8695E71faB85fFdd4C0c5ac588Ef6a3EFF5B62",
-  registry: process.env.NEXT_PUBLIC_REGISTRY ?? "0x6bbf22FD91d8869C2B446a5E9CD9592c61Ab64D8",
-  sentinel: process.env.NEXT_PUBLIC_SENTINEL ?? "0x2ca8743230F189e72A137AB5EfF3341Be3f35023",
+  coordinator: process.env.NEXT_PUBLIC_COORDINATOR ?? "0x9A39fc7A9385F820CC9820E291519762DA0720a3",
+  models: process.env.NEXT_PUBLIC_MODELS ?? "0x2e0b0D45DF4a9867e8E5F1e07d04076a5815CfCd",
+  registry: process.env.NEXT_PUBLIC_REGISTRY ?? "0xfC059C84744843B1651bfa414D5500c0dF8Ca9D1",
+  sentinel: process.env.NEXT_PUBLIC_SENTINEL ?? "0xBBDB7DE59E7eB67AFAF76FCcc32575A54166213E",
   // Superseded v1 coordinator - read so the stats reflect total history,
-  // not just the current deployment. Mainnet has no legacy deployment.
-  legacyCoordinator: process.env.NEXT_PUBLIC_LEGACY_COORDINATOR ?? "0x0000000000000000000000000000000000000000",
+  // not just the current (UUPS proxy) deployment.
+  legacyCoordinator: process.env.NEXT_PUBLIC_LEGACY_COORDINATOR ?? "0x8f487264E1B183F588CAc678D000754D3bd9B07E",
 };
 
 const COORD_ABI = [

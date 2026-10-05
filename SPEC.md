@@ -268,6 +268,22 @@ Phase 3 (marked `MAINNET-GATE`), before deploy, not after.
 re-registration reset, Sentinel monotonic report guard); all four contracts
 verified on scan.bohr.life. The v1 contracts above are superseded and idle
 (v1 Sentinel still holds ~0.47 tBOT - no withdraw path by design).
+
+**v3 mainnet stack - UUPS proxies, permanent addresses.** Impl + ERC1967Proxy
+per contract; `upgradeToAndCall` via `script/Upgrade.s.sol` (onlyOwner).
+All impls verified on scan.botchain.ai; proxies auto-verified by bytecode
+match. Dashboard reads the v1 coordinator `0x8f48…B07E` as
+`NEXT_PUBLIC_LEGACY_COORDINATOR` for combined history. v1 mainnet Sentinel
+`0x2ca8…5023` holds ~1.88 BOT stranded (v1 had no rescue()). Operator
+re-registered on the new registry (tx `0xfca0bbdc…`, 0.1 BOT stake).
+Tick #1 fulfilled `0xe219f389…` - callback out-of-gassed at 300k on the
+~544B report (17 slots), `setCallbackGas(800k)` applied tx `0xa53cee53…`.
+||| | mainnet-677 | | |
+||| ModelRegistry v3 proxy | mainnet-677 | `0x2e0b0D45DF4a9867e8E5F1e07d04076a5815CfCd` | Deploy.s.sol broadcast |
+||| OperatorRegistry v3 proxy | mainnet-677 | `0xfC059C84744843B1651bfa414D5500c0dF8Ca9D1` | Deploy.s.sol broadcast |
+||| OracleCoordinator v3 proxy | mainnet-677 | `0x9A39fc7A9385F820CC9820E291519762DA0720a3` | Deploy.s.sol broadcast |
+||| Sentinel v3 proxy | mainnet-677 | `0xBBDB7DE59E7eB67AFAF76FCcc32575A54166213E` | DeploySentinel.s.sol broadcast |
+||| (impls: models `0xAC55…9c9A`, operators `0x8301…05d2`, coordinator `0x3B08…7E879`, sentinel `0xDB83…BcfE1`) | | | |
 || ModelRegistry v2 | testnet-968 | `0xb208fb3016c14b0946bf3FBbe1Def28d72F63193` | Deploy.s.sol broadcast |
 || OperatorRegistry v2 | testnet-968 | `0xf22dA276EAA3c4de433115a95111907A6338D3A5` | Deploy.s.sol broadcast |
 || OracleCoordinator v2 | testnet-968 | `0x4861Ff97A82436d64514C0B119c4796F46a4d8Da` | Deploy.s.sol broadcast |
