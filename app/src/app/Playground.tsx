@@ -151,7 +151,7 @@ export default function Playground({
     if (!model || !prompt.trim()) return;
     setPhase({ s: "signing" });
     try {
-      const bp = new BrowserProvider((window as any).ethereum);
+      const bp = new BrowserProvider(wallet.provider ?? (window as any).ethereum);
       // Re-check chain at send time - the user may have switched networks
       // after connecting; broadcasting there would pay on the wrong chain.
       const net = await bp.getNetwork();
@@ -185,6 +185,7 @@ export default function Playground({
       const requestId = reqLog?.args?.requestId?.toString();
       if (!requestId) throw new Error("requestId missing from receipt");
       setPhase({ s: "pending", requestId, txHash: tx.hash });
+      void wallet.refresh(); // balance chip reflects the spend
       toast.success(`Request #${requestId} submitted; operator notified`, {
         action: { label: "tx ↗", onClick: () => window.open(`${explorer}/tx/${tx.hash}`, "_blank") },
       });
@@ -235,8 +236,8 @@ export default function Playground({
         <Dialog onClose={() => setOpen(false)} labelId="try-h">
           <DialogHeader id="try-h" title="Try the oracle" onClose={() => setOpen(false)} />
           <p className="text-xs text-muted-foreground mb-4">
-              A real on-chain request signed by your wallet; you pay tBOT, the operator runs the
-              model, the answer is written back on-chain. Every query costs tBOT, including spam.
+              A real on-chain request signed by your wallet; you pay BOT, the operator runs the
+              model, the answer is written back on-chain. Every query costs BOT, including spam.
             </p>
 
             {wallet.status === "noWallet" && (
@@ -251,7 +252,7 @@ export default function Playground({
 
             {(wallet.status === "idle" || wallet.status === "connecting") && (
               <button
-                onClick={wallet.connect}
+                onClick={wallet.openWalletModal}
                 disabled={wallet.status === "connecting"}
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-primary"
               >
@@ -335,15 +336,7 @@ export default function Playground({
                   </button>
                   {insufficient && (
                     <span className="text-xs text-warning">
-                      Balance too low; get tBOT at{" "}
-                      <a
-                        className="underline"
-                        href="https://faucet.botchain.ai/en/basic"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        the faucet
-                      </a>
+                      Balance too low: needs BOT for the query fee plus gas on BOT Chain mainnet.
                     </span>
                   )}
                 </div>

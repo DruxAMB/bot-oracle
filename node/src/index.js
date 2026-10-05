@@ -147,10 +147,19 @@ await tick();
 // --- optional Sentinel keeper ---
 // SENTINEL_ADDRESS set => this node also fires tick() on cadence; the query
 // fee comes from Sentinel's own funded balance, the keeper pays gas only.
+// The contract gates on block.timestamp, not wall clock - firing on a naive
+// wall-clock interval lands inside the TooEarly window and skips a whole
+// period. After every attempt we reschedule from the contract's own
+// lastTickAt + minInterval so cadence matches the on-chain rate.
 if (process.env.SENTINEL_ADDRESS) {
-  const sentinel = new Contract(getAddress(process.env.SENTINEL_ADDRESS), SENTINEL_ABI, operator);
-  const everyMs = Number(process.env.SENTINEL_INTERVAL_MS ?? "300000");
-  const fire = async () => {
+  const sentinel = new Contract(
+    getAddress(process.env.SENTINEL_ADDRESS),
+    [...SENTINEL_ABI, "function minInterval() view returns (uint64)", "function lastTickAt() view returns (uint64)"],
+    operator
+  );
+  const fallbackMs = Number(process.env.SENTINEL_INTERVAL_MS ?? "300000");
+  const arm = async () => {
+    let delay = fallbackMs;
     try {
       const tx = await sentinel.tick();
       console.log(`sentinel tick tx ${tx.hash}`);
@@ -159,8 +168,13 @@ if (process.env.SENTINEL_ADDRESS) {
       // TooEarly / underfunded are routine - log once per fire, keep going
       console.log(`sentinel tick skipped: ${(e.shortMessage ?? e.message)?.slice(0, 80)}`);
     }
+    try {
+      const [mi, last] = await Promise.all([sentinel.minInterval(), sentinel.lastTickAt()]);
+      delay = Math.max(30_000, Number(last + mi) * 1000 - Date.now() + 5_000);
+    } catch {}
+    setTimeout(arm, delay);
   };
-  setInterval(fire, everyMs);
-  console.log(`sentinel keeper armed on ${await sentinel.getAddress()} every ${everyMs}ms`);
-  // don't fire immediately - respect the on-chain interval
+  console.log(`sentinel keeper armed on ${await sentinel.getAddress()}`);
+  // fire once shortly after boot - lastTickAt resyncs us to the chain clock
+  setTimeout(arm, 15_000);
 }
