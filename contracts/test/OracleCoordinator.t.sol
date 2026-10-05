@@ -25,6 +25,37 @@ contract RevertingConsumer is IOracleConsumer {
     }
 }
 
+// A contract whose receive() can be toggled to reject bare BOT transfers -
+// exercises the push-then-pull settlement fallback.
+contract NonReceiver {
+    OracleCoordinator public c;
+    bool public acceptEth;
+
+    constructor(address _c) {
+        c = OracleCoordinator(_c);
+    }
+
+    function setAccept(bool v) external {
+        acceptEth = v;
+    }
+
+    function request(bytes32 m, uint256 v) external {
+        c.request{value: v}(m, "x", address(0), 0);
+    }
+
+    function challengeIt(uint256 id, uint256 bond) external {
+        c.challenge{value: bond}(id);
+    }
+
+    function claim() external {
+        c.withdraw();
+    }
+
+    receive() external payable {
+        require(acceptEth, "no eth thanks");
+    }
+}
+
 contract OracleCoordinatorTest is Test {
     OracleCoordinator coordinator;
     OperatorRegistry operators;
@@ -163,6 +194,80 @@ contract OracleCoordinatorTest is Test {
         vm.prank(challenger);
         vm.expectRevert(abi.encodeWithSelector(OracleCoordinator.ChallengeWindowClosed.selector, id));
         coordinator.challenge{value: BOND}(id);
+    }
+
+    function test_callbackGasAboveMaxReverts() public {
+        vm.prank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(OracleCoordinator.CallbackGasTooHigh.selector, 2_000_000, 1_000_000)
+        );
+        coordinator.request{value: PRICE}(MODEL, "x", makeAddr("cb"), 2_000_000);
+    }
+
+    function test_refundToNonReceiverCreditsWithdrawable() public {
+        NonReceiver nr = new NonReceiver(address(coordinator));
+        vm.deal(address(nr), PRICE);
+        nr.request(MODEL, PRICE);
+        uint256 id = coordinator.nextRequestId() - 1;
+
+        vm.warp(block.timestamp + TIMEOUT + 1);
+        coordinator.refundIfTimedOut(id);
+        assertEq(coordinator.withdrawable(address(nr)), PRICE);
+
+        nr.setAccept(true);
+        uint256 balBefore = address(nr).balance;
+        nr.claim();
+        assertEq(address(nr).balance, balBefore + PRICE);
+        assertEq(coordinator.withdrawable(address(nr)), 0);
+    }
+
+    function test_resolveChallengeSurvivesDrainedStake() public {
+        uint256 id = _request(address(0));
+        vm.prank(operator);
+        coordinator.fulfill(id, "x");
+        // Drain stake below fee + bond so the second slash hits a zero balance -
+        // on the old code this reverted NotAnOperator and bricked resolution.
+        operators.slash(operator, MIN_STAKE - 0.005 ether, treasury);
+        vm.prank(challenger);
+        coordinator.challenge{value: BOND}(id);
+        uint256 chalBefore = challenger.balance;
+        coordinator.resolveChallenge(id, true);
+        (,,,,,,,, OracleCoordinator.Status status,,,) = _req(id);
+        assertEq(uint256(status), uint256(OracleCoordinator.Status.Resolved));
+        assertEq(challenger.balance, chalBefore + BOND); // bond back; bounty was 0 (stake empty)
+    }
+
+    function test_challengerBondReturnFailureStillResolves() public {
+        NonReceiver nr = new NonReceiver(address(coordinator));
+        vm.deal(address(nr), BOND);
+        uint256 id = _request(address(0));
+        vm.prank(operator);
+        coordinator.fulfill(id, "x");
+        nr.challengeIt(id, BOND);
+        coordinator.resolveChallenge(id, true);
+        // registry-side bounty credit + coordinator-side bond return both fell
+        // back to withdrawable for the non-receiving challenger contract.
+        assertEq(coordinator.withdrawable(address(nr)), BOND);
+        assertEq(operators.withdrawable(address(nr)), BOND);
+        (,,,,,,,, OracleCoordinator.Status status,,,) = _req(id);
+        assertEq(uint256(status), uint256(OracleCoordinator.Status.Resolved));
+    }
+
+    function test_reRegisterDoesNotDoubleCount() public {
+        vm.startPrank(operator);
+        operators.requestUnstake();
+        vm.warp(block.timestamp + 3 days + 1);
+        operators.withdrawStake();
+        operators.register{value: MIN_STAKE}("https://node.example");
+        vm.stopPrank();
+        assertEq(operators.operatorCount(), 1);
+        assertTrue(operators.isActiveOperator(operator));
+    }
+
+    function test_protocolFeeBpsCappedAt20() public {
+        coordinator.setProtocolFeeBps(2_000);
+        vm.expectRevert("bps > 20%");
+        coordinator.setProtocolFeeBps(2_001);
     }
 
     function test_treasuryWithdraw() public {

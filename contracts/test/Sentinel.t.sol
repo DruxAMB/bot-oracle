@@ -100,6 +100,35 @@ contract SentinelTest is Test {
         assertTrue(operators.isActiveOperator(operator));
     }
 
+    function test_delayedFulfillAttributesOriginTick() public {
+        uint256 id1 = sentinel.tick(); // tick 0
+        vm.warp(block.timestamp + INTERVAL + 1);
+        uint256 id2 = sentinel.tick(); // tick 1
+        vm.startPrank(operator);
+        coordinator.fulfill(id2, abi.encode("newer report"));
+        // A fulfill delayed past a later tick must still attribute tick 0.
+        vm.expectEmit(true, true, false, true);
+        emit Sentinel.ReportPosted(id1, 0, "stale report");
+        coordinator.fulfill(id1, abi.encode("stale report"));
+        vm.stopPrank();
+    }
+
+    function test_rescueReturnsPurse() public {
+        address recv = makeAddr("recv");
+        uint256 bal = address(sentinel).balance;
+        sentinel.rescue(payable(recv));
+        assertEq(address(sentinel).balance, 0);
+        assertEq(recv.balance, bal);
+    }
+
+    function test_setOracleRepoints() public {
+        OracleCoordinator other = new OracleCoordinator(
+            address(models), address(operators), treasury, 0, 1 hours, 1 days, 0.01 ether
+        );
+        sentinel.setOracle(address(other));
+        assertEq(address(sentinel.oracle()), address(other));
+    }
+
     function test_tickAcceptsTopUp() public {
         Sentinel poor = new Sentinel(
             address(coordinator), MODEL, PRICE, INTERVAL, 300_000, "p"

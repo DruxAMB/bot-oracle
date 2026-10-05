@@ -270,7 +270,7 @@ function challenge(uint256 requestId) external payable;`}</pre>
             <P>
               Every request is paid. The coordinator escrows the fee, releases 90% to the operator at
               fulfillment, and accrues 10% as protocol revenue; the split is verified on-chain, not just
-              documented. Pricing is per-model (testnet: 0.001 BOT per query on the live tier), with
+              documented. Pricing is per-model (mainnet: 0.01-0.05 BOT per query by tier), with
               USDT-denominated pricing and prepaid balances planned for high-frequency consumers.
               Off-chain revenue comes through the metered gateway; B2B dedicated operator slots are a
               later phase.

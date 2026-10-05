@@ -142,8 +142,13 @@ export function WalletProvider({
       // accountsChanged fires and refresh() picks it up anyway.
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
+        const req = eth.request({ method: "eth_requestAccounts" });
+        // If the 60s timeout wins the race, req still settles later - swallow
+        // its outcome here so a late user-rejection isn't an unhandled
+        // rejection. accountsChanged->refresh() picks up a late approval.
+        req.catch(() => {});
         await Promise.race([
-          eth.request({ method: "eth_requestAccounts" }),
+          req,
           new Promise((_, rej) => {
             timer = setTimeout(() => rej(Object.assign(new Error("timeout"), { code: "PROMPT_TIMEOUT" })), 60_000);
           }),
@@ -232,9 +237,11 @@ export function WalletProvider({
   }, [chainId, chainName, rpc, explorer, refresh]);
 
   // Restore the wallet the user picked last visit once EIP-6963
-  // providers announce themselves (they reply promptly to the request
-  // event; give them a beat, then re-check).
+  // providers announce themselves. Discovery must start here - it otherwise
+  // only runs when the modal renders, and an empty announce map makes the
+  // saved-uuid lookup silently fall back to window.ethereum.
   useEffect(() => {
+    getWallets(); // triggers startDiscovery() + the announce request
     let saved: string | null = null;
     try {
       saved = localStorage.getItem(LS_KEY);

@@ -62,8 +62,10 @@ export default function Playground({
 
   const model = models[modelIdx];
   const busy = phase.s === "signing" || phase.s === "pending";
+  // balance must cover the fee AND request gas (~0.005 BOT headroom)
+  const GAS_BUFFER = 5_000_000_000_000_000n;
   const insufficient =
-    wallet.status === "ready" && !!model && wallet.balance < BigInt(model.priceWei);
+    wallet.status === "ready" && !!model && wallet.balance < BigInt(model.priceWei) + GAS_BUFFER;
 
   async function pollResult(requestId: string, txHash: string, fromBlock: number) {
     // Generation guard: a superseded poll (stale resume, or a newer send)

@@ -25,6 +25,9 @@ contract Sentinel is IOracleConsumer, Ownable {
     string public latestReport;
     uint64 public latestReportAt;
     uint256 public latestReportRequestId;
+    /// @notice requestId -> tickIndex so a delayed fulfill is attributed to the
+    /// tick that produced it, not whichever tick happened to be last.
+    mapping(uint256 => uint256) public tickOfRequest;
 
     event Ticked(uint256 indexed tickIndex, uint256 indexed requestId, bytes32 indexed modelId);
     event ReportPosted(uint256 indexed requestId, uint256 indexed tickIndex, string report);
@@ -67,9 +70,10 @@ contract Sentinel is IOracleConsumer, Ownable {
                 " [tick ", Strings.toString(tickIndex), " @ ", Strings.toString(block.timestamp), "]"
             )
         );
-        requestId = oracle.request{value: queryPrice}(modelId, input, address(this), callbackGas);
         lastTickAt = uint64(block.timestamp);
+        requestId = oracle.request{value: queryPrice}(modelId, input, address(this), callbackGas);
         latestRequestId = requestId;
+        tickOfRequest[requestId] = tickIndex;
         emit Ticked(tickIndex, requestId, modelId);
         tickIndex++;
     }
@@ -84,7 +88,7 @@ contract Sentinel is IOracleConsumer, Ownable {
             latestReportAt = uint64(block.timestamp);
             latestReportRequestId = requestId;
         }
-        emit ReportPosted(requestId, tickIndex == 0 ? 0 : tickIndex - 1, report);
+        emit ReportPosted(requestId, tickOfRequest[requestId], report);
     }
 
     function setQuery(bytes32 modelId_, uint256 queryPrice_) external onlyOwner {
@@ -102,5 +106,18 @@ contract Sentinel is IOracleConsumer, Ownable {
 
     function setCallbackGas(uint64 v) external onlyOwner {
         callbackGas = v;
+    }
+
+    /// @notice Repoint at a successor coordinator (v2 migration path) without
+    /// redeploying the consumer and losing its report history.
+    function setOracle(address oracle_) external onlyOwner {
+        oracle = OracleCoordinator(oracle_);
+    }
+
+    /// @notice Recover the query purse - the contract otherwise has no outflow
+    /// besides tick() payments, so without this a retired Sentinel strands funds.
+    function rescue(address payable to) external onlyOwner {
+        (bool ok,) = to.call{value: address(this).balance}("");
+        require(ok, "rescue failed");
     }
 }

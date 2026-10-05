@@ -74,18 +74,38 @@ async function waitFulfill(requestId, timeoutMs) {
   throw Object.assign(new Error("timeout awaiting fulfillment"), { status: 504 });
 }
 
+const MAX_PROMPT_CHARS = 4_000;
+const MAX_INPUT_BYTES = 16 * 1024;
+
 async function handleQuery(req, res, key) {
   const body = await readBody(req, 64 * 1024);
-  const { model, prompt, input, wait = true } = JSON.parse(body || "{}");
+  let parsed;
+  try {
+    parsed = JSON.parse(body || "{}");
+  } catch {
+    return json(res, 400, { error: "invalid JSON body" });
+  }
+  const { model, prompt, input, wait = true } = parsed;
   if (!model || (!prompt && !input)) return json(res, 400, { error: "need {model, prompt|input}" });
+  if (typeof prompt === "string" && prompt.length > MAX_PROMPT_CHARS)
+    return json(res, 400, { error: `prompt too large (max ${MAX_PROMPT_CHARS} chars)` });
+  if (input !== undefined && (typeof input !== "string" || (input.length - 2) / 2 > MAX_INPUT_BYTES))
+    return json(res, 400, { error: `input too large (max ${MAX_INPUT_BYTES} bytes)` });
 
   const { id, price } = await getPrice(model);
   const payload = input ?? abi.encode(["string"], [prompt]);
   const tx = await coordinator.request(id, payload, "0x0000000000000000000000000000000000000000", 0, { value: price });
   const receipt = await tx.wait();
+  // tx.wait() resolves on a reverted tx too - check before billing the key.
+  if (!receipt || receipt.status === 0) {
+    throw Object.assign(new Error(`request tx ${tx.hash} reverted`), { status: 502 });
+  }
   const reqLog = receipt.logs.map((l) => { try { return coordinator.interface.parseLog(l); } catch { return null; } })
     .find((x) => x?.name === "RequestSent");
   const requestId = reqLog?.args?.requestId?.toString();
+  if (!requestId) {
+    throw Object.assign(new Error(`RequestSent missing in ${tx.hash}`), { status: 502 });
+  }
 
   charge(key);
   if (!wait) return json(res, 202, { requestId, requestTx: tx.hash });
@@ -162,7 +182,12 @@ const server = createServer(async (req, res) => {
       return await handleQuery(req, res, key);
     }
     if (req.method === "GET" && req.url?.startsWith("/v1/result/")) {
-      const id = BigInt(req.url.split("/").pop());
+      let id;
+      try {
+        id = BigInt(req.url.split("/").pop() ?? "");
+      } catch {
+        return json(res, 400, { error: "invalid request id" });
+      }
       const r = await coordinator.requests(id);
       const s = Number(r[8]);
       if (s === 1 || s === 4) {

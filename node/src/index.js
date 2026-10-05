@@ -49,6 +49,8 @@ const TOPICS = [T_REQUEST, T_FULFILL, T_REFUND, T_RESOLVED];
 
 const pending = new Map(); // requestId -> {modelId, input}
 const inflight = new Set();
+const attempts = new Map(); // requestId -> consecutive serve failures
+const MAX_ATTEMPTS = 20; // after this, drop: a permanently-reverting request must not retry forever
 
 function loadState() {
   try { return JSON.parse(readFileSync(cfg.stateFile, "utf8")); } catch { return {}; }
@@ -107,12 +109,23 @@ async function serve(requestId, job) {
 
     const tx = await coordinator.fulfill(requestId, output, { gasLimit: (gasEst * 130n) / 100n });
     console.log(`#${requestId} fulfill tx ${tx.hash}`);
-    await tx.wait();
+    const receipt = await tx.wait();
+    if (!receipt || receipt.status === 0) throw new Error(`fulfill tx ${tx.hash} reverted on-chain`);
     pending.delete(requestId);
+    attempts.delete(requestId);
     console.log(`#${requestId} fulfilled`);
   } catch (e) {
-    // transient (RPC, nonce, backend) - retry next round; permanent reverts log loudly
-    console.error(`#${requestId} serve error: ${e.message?.slice(0, 200)}`);
+    const n = (attempts.get(requestId) ?? 0) + 1;
+    attempts.set(requestId, n);
+    if (n >= MAX_ATTEMPTS) {
+      // e.g. operator key unstaked or a permanent revert - the requester can
+      // still refund on-chain; retrying forever just burns log lines.
+      pending.delete(requestId);
+      console.error(`#${requestId} dropped after ${n} failed attempts - request stays refundable on-chain`);
+    } else {
+      // transient (RPC, nonce, backend) - retry next round; permanent reverts log loudly
+      console.error(`#${requestId} serve error (attempt ${n}): ${e.message?.slice(0, 200)}`);
+    }
   } finally {
     inflight.delete(requestId);
   }
@@ -163,7 +176,8 @@ if (process.env.SENTINEL_ADDRESS) {
     try {
       const tx = await sentinel.tick();
       console.log(`sentinel tick tx ${tx.hash}`);
-      await tx.wait();
+      const rc = await tx.wait();
+      if (!rc || rc.status === 0) throw new Error(`tick tx ${tx.hash} reverted`);
     } catch (e) {
       // TooEarly / underfunded are routine - log once per fire, keep going
       console.log(`sentinel tick skipped: ${(e.shortMessage ?? e.message)?.slice(0, 80)}`);

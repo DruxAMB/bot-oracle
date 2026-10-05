@@ -44,10 +44,17 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
     uint64 public challengeWindow;
     uint256 public challengeBond;
     uint256 public minCallbackGas = 50_000;
+    /// @notice Hard ceiling on the gas a consumer's callback may burn - the
+    /// OPERATOR pays that gas inside fulfill(), so an unbounded limit is a
+    /// griefing vector on the fulfilling operator.
+    uint64 public maxCallbackGas = 1_000_000;
 
     uint256 public nextRequestId = 1;
     uint256 public accruedProtocolFees;
     mapping(uint256 => Request) public requests;
+    /// @notice Pull-balance fallback for recipients that can't accept a bare
+    /// value transfer - keeps fulfill/refund/resolve unbrickable.
+    mapping(address => uint256) public withdrawable;
 
     /// @dev `input` rides in the event payload - the node reads it from logs,
     /// consumers don't pay storage for it, `inputHash` keeps it honest.
@@ -65,6 +72,8 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
     event Challenged(uint256 indexed requestId, address indexed challenger, uint256 bond);
     event ChallengeResolved(uint256 indexed requestId, bool challengerWins);
     event TreasuryWithdrawn(address indexed to, uint256 amount);
+    event WithdrawableCredited(address indexed to, uint256 amount);
+    event Withdrawn(address indexed to, uint256 amount);
 
     error WrongFee(uint256 sent, uint256 required);
     error NotPending(uint256 requestId, Status status);
@@ -75,6 +84,8 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
     error ChallengeWindowClosed(uint256 requestId);
     error ZeroAddress();
     error CallbackGasTooLow(uint64 given, uint256 min);
+    error CallbackGasTooHigh(uint64 given, uint256 max);
+    error NothingToWithdraw();
 
     constructor(
         address models_,
@@ -105,8 +116,13 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
     ) external payable returns (uint256 requestId) {
         uint256 price = models.priceOf(modelId);
         if (msg.value != price) revert WrongFee(msg.value, price);
-        if (callbackContract != address(0) && callbackGasLimit < minCallbackGas) {
-            revert CallbackGasTooLow(callbackGasLimit, minCallbackGas);
+        if (callbackContract != address(0)) {
+            if (callbackGasLimit < minCallbackGas) {
+                revert CallbackGasTooLow(callbackGasLimit, minCallbackGas);
+            }
+            if (callbackGasLimit > maxCallbackGas) {
+                revert CallbackGasTooHigh(callbackGasLimit, maxCallbackGas);
+            }
         }
 
         requestId = nextRequestId++;
@@ -138,11 +154,7 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
 
         uint256 cut = (r.fee * protocolFeeBps) / 10_000;
         accruedProtocolFees += cut;
-        uint256 opPay = r.fee - cut;
-        if (opPay > 0) {
-            (bool ok,) = msg.sender.call{value: opPay}("");
-            require(ok, "operator pay failed");
-        }
+        _pay(msg.sender, r.fee - cut);
 
         if (r.callbackContract != address(0)) {
             (bool ok,) = r.callbackContract.call{gas: r.callbackGasLimit}(
@@ -160,8 +172,7 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
         if (block.timestamp <= r.createdAt + requestTimeout) revert NotTimedOut(requestId);
         r.status = Status.Refunded;
         emit RequestRefunded(requestId, r.requester, r.fee);
-        (bool ok,) = r.requester.call{value: r.fee}("");
-        require(ok, "refund failed");
+        _pay(r.requester, r.fee);
     }
 
     /// @notice Post a bond disputing a fulfilled result inside the challenge
@@ -190,8 +201,7 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
         if (challengerWins) {
             operators.slash(r.operator, r.fee, r.requester);
             operators.slash(r.operator, bond, challenger);
-            (bool ok,) = challenger.call{value: bond}("");
-            require(ok, "bond return failed");
+            _pay(challenger, bond);
         } else {
             accruedProtocolFees += bond;
         }
@@ -202,8 +212,30 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
         uint256 amount = accruedProtocolFees;
         accruedProtocolFees = 0;
         emit TreasuryWithdrawn(treasury, amount);
-        (bool ok,) = treasury.call{value: amount}("");
-        require(ok, "treasury withdraw failed");
+        _pay(treasury, amount);
+    }
+
+    /// @dev Push-then-pull settlement: try a direct transfer; a recipient that
+    /// can't accept a bare call gets a withdrawable balance instead. This is
+    /// what keeps fulfill/refund/resolve unbrickable no matter what kind of
+    /// contract sits on the receiving end.
+    function _pay(address to, uint256 amount) internal {
+        if (amount == 0) return;
+        (bool ok,) = to.call{value: amount}("");
+        if (!ok) {
+            withdrawable[to] += amount;
+            emit WithdrawableCredited(to, amount);
+        }
+    }
+
+    /// @notice Claim a balance credited when a direct transfer failed.
+    function withdraw() external nonReentrant {
+        uint256 amount = withdrawable[msg.sender];
+        if (amount == 0) revert NothingToWithdraw();
+        withdrawable[msg.sender] = 0;
+        emit Withdrawn(msg.sender, amount);
+        (bool ok,) = msg.sender.call{value: amount}("");
+        require(ok, "withdraw failed");
     }
 
     function setTreasury(address t) external onlyOwner {
@@ -211,13 +243,25 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
         treasury = t;
     }
 
+    /// @notice Protocol take is hard-capped at 20% - bounds the worst the
+    /// owner key can ever do to requester fees.
     function setProtocolFeeBps(uint16 bps) external onlyOwner {
-        require(bps <= 10_000, "bps > 100%");
+        require(bps <= 2_000, "bps > 20%");
         protocolFeeBps = bps;
     }
 
     function setTimeouts(uint64 requestTimeout_, uint64 challengeWindow_) external onlyOwner {
         requestTimeout = requestTimeout_;
         challengeWindow = challengeWindow_;
+    }
+
+    function setChallengeBond(uint256 bond) external onlyOwner {
+        challengeBond = bond;
+    }
+
+    function setCallbackGasBounds(uint64 lo, uint64 hi) external onlyOwner {
+        require(lo <= hi, "lo > hi");
+        minCallbackGas = lo;
+        maxCallbackGas = hi;
     }
 }

@@ -14,6 +14,7 @@ contract OperatorRegistry is Ownable, ReentrancyGuard {
         uint256 stake;
         uint256 unstakeRequestedAt; // 0 = not unstaking
         string nodeEndpoint;        // informational: where the node's gateway lives
+        bool listed;                // pushed into operatorList already (re-register must not dup)
     }
 
     uint256 public minStake;
@@ -25,16 +26,22 @@ contract OperatorRegistry is Ownable, ReentrancyGuard {
 
     mapping(address => Operator) public operators;
     address[] public operatorList;
+    /// @notice Pull-balance fallback: recipients that can't accept a direct
+    /// transfer get credited here instead of reverting the whole operation.
+    mapping(address => uint256) public withdrawable;
 
     event OperatorRegistered(address indexed operator, uint256 stake, string nodeEndpoint);
     event UnstakeRequested(address indexed operator, uint256 availableAt);
     event OperatorWithdrawn(address indexed operator, uint256 amount);
     event OperatorSlashed(address indexed operator, uint256 amount, address indexed to);
+    event WithdrawableCredited(address indexed to, uint256 amount);
+    event Withdrawn(address indexed to, uint256 amount);
 
     error StakeBelowMinimum(uint256 sent, uint256 required);
     error NotAnOperator(address operator);
     error UnbondingNotElapsed(uint256 availableAt);
     error AlreadyRegistered(address operator);
+    error NothingToWithdraw();
 
     constructor(uint256 minStake_, uint256 unbondingPeriod_) Ownable(msg.sender) {
         minStake = minStake_;
@@ -48,7 +55,10 @@ contract OperatorRegistry is Ownable, ReentrancyGuard {
         op.stake = msg.value;
         op.unstakeRequestedAt = 0; // cleared on re-register after a withdrawal
         op.nodeEndpoint = nodeEndpoint;
-        operatorList.push(msg.sender);
+        if (!op.listed) {
+            op.listed = true;
+            operatorList.push(msg.sender);
+        }
         emit OperatorRegistered(msg.sender, msg.value, nodeEndpoint);
     }
 
@@ -83,18 +93,37 @@ contract OperatorRegistry is Ownable, ReentrancyGuard {
 
     /// @notice Slash an operator's stake; sends the slashed amount to `to`
     /// (arbitrator decides destination - challenger bounty, requester refund, treasury).
-    /// Callable by owner or the authorized slasher contract.
+    /// Callable by owner or the authorized slasher contract. A zero balance is
+    /// a no-op, not a revert - a partially-drained operator must not brick the
+    /// coordinator's resolveChallenge path.
     function slash(address operator, uint256 amount, address to) external nonReentrant {
         require(msg.sender == owner() || msg.sender == slasher, "not slasher");
         Operator storage op = operators[operator];
-        if (op.stake == 0) revert NotAnOperator(operator);
-        if (amount > op.stake) amount = op.stake;
-        op.stake -= amount;
-        emit OperatorSlashed(operator, amount, to);
-        if (amount > 0) {
-            (bool ok,) = to.call{value: amount}("");
-            require(ok, "slash transfer failed");
+        uint256 slashed = amount > op.stake ? op.stake : amount;
+        op.stake -= slashed;
+        emit OperatorSlashed(operator, slashed, to);
+        _credit(to, slashed);
+    }
+
+    /// @dev Push-then-pull: direct transfer first; recipients that can't accept
+    /// a bare call get a withdrawable balance instead of reverting the caller.
+    function _credit(address to, uint256 amount) internal {
+        if (amount == 0) return;
+        (bool ok,) = to.call{value: amount}("");
+        if (!ok) {
+            withdrawable[to] += amount;
+            emit WithdrawableCredited(to, amount);
         }
+    }
+
+    /// @notice Claim a balance credited when a direct transfer failed.
+    function withdraw() external nonReentrant {
+        uint256 amount = withdrawable[msg.sender];
+        if (amount == 0) revert NothingToWithdraw();
+        withdrawable[msg.sender] = 0;
+        emit Withdrawn(msg.sender, amount);
+        (bool ok,) = msg.sender.call{value: amount}("");
+        require(ok, "withdraw failed");
     }
 
     function operatorCount() external view returns (uint256) {

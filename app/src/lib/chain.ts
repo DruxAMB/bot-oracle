@@ -20,6 +20,7 @@ const COORD_ABI = [
   "function requests(uint256) view returns (address requester, bytes32 modelId, bytes32 inputHash, uint256 fee, address callbackContract, uint64 callbackGasLimit, uint64 createdAt, uint64 fulfilledAt, uint8 status, bytes32 outputHash, address operator, address challenger)",
   "event RequestSent(uint256 indexed requestId, address indexed requester, bytes32 indexed modelId, bytes32 inputHash, bytes input, address callbackContract)",
   "event RequestFulfilled(uint256 indexed requestId, address indexed operator, bytes32 outputHash, bytes output)",
+  "event RequestRefunded(uint256 indexed requestId, address indexed requester, uint256 fee)",
 ];
 const REG_ABI = [
   "function operatorCount() view returns (uint256)",
@@ -144,12 +145,16 @@ export async function loadDash(): Promise<DashData> {
       (r) => Number(r.status) === 1 || Number(r.status) === 4
     ).length;
 
-    const from = Math.max(0, block - 50_000);
-    const [sentLogs, fulfilledLogs, modelLogs] = await Promise.all([
-      p.getLogs({ address: NET.coordinator, topics: [coord.interface.getEvent("RequestSent")!.topicHash], fromBlock: from, toBlock: "latest" }),
-      p.getLogs({ address: NET.coordinator, topics: [coord.interface.getEvent("RequestFulfilled")!.topicHash], fromBlock: from, toBlock: "latest" }),
+    // Full-history event aggregation: one getLogs per topic from block 0.
+    // Scales past the old 500-request enumeration cap - "Fulfilled" and payer
+    // stats must stay accurate as request count grows.
+    const [sentLogs, fulfilledLogs, refundLogs, modelLogs] = await Promise.all([
+      p.getLogs({ address: NET.coordinator, topics: [coord.interface.getEvent("RequestSent")!.topicHash], fromBlock: 0, toBlock: "latest" }),
+      p.getLogs({ address: NET.coordinator, topics: [coord.interface.getEvent("RequestFulfilled")!.topicHash], fromBlock: 0, toBlock: "latest" }),
+      p.getLogs({ address: NET.coordinator, topics: [coord.interface.getEvent("RequestRefunded")!.topicHash], fromBlock: 0, toBlock: "latest" }),
       p.getLogs({ address: NET.models, topics: [modelReg.interface.getEvent("ModelSet")!.topicHash], fromBlock: 0, toBlock: "latest" }),
     ]);
+    const refundedIds = new Set(refundLogs.map((l) => BigInt(l.topics[1]).toString()));
 
     // requestId -> decoded output string (from RequestFulfilled payload)
     const results = new Map<string, string>();
@@ -178,19 +183,17 @@ export async function loadDash(): Promise<DashData> {
       })
     );
 
-    // One enumeration pass feeds both the fulfilled count and the unique
-    // requester set. Contract requesters (Sentinel) are separated from EOAs -
-    // "unique payers" must mean real wallets, not our own consumer contract.
-    const reqs = await Promise.all(
-      Array.from({ length: Math.min(Number(nextId - 1n), 500) }, (_, i) =>
-        coord.requests(i + 1)
-      )
-    );
-    const fulfilledCount = reqs.filter(
-      (r) => Number(r.status) === 1 || Number(r.status) === 4
-    ).length;
+    // fulfilled = distinct requests that ever got a RequestFulfilled event.
+    const fulfilledCount = new Set(fulfilledLogs.map((l) => BigInt(l.topics[1]).toString())).size;
 
-    const requesters = new Set<string>(reqs.map((r) => r.requester.toLowerCase()));
+    // Unique payers = requesters of requests that were NOT refunded - a user
+    // who paid then got their money back isn't a paying user. Contract
+    // requesters (Sentinel) are separated from EOAs via getCode.
+    const requesters = new Set<string>();
+    for (const l of sentLogs) {
+      if (refundedIds.has(BigInt(l.topics[1]).toString())) continue;
+      requesters.add(("0x" + l.topics[2].slice(26)).toLowerCase());
+    }
     for (const r of legacyReqs) requesters.add(r.requester.toLowerCase());
     const codes = await Promise.all(
       [...requesters].map((a) => p.getCode(a).catch(() => "0x"))
