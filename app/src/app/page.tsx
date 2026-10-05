@@ -57,7 +57,9 @@ export default async function Home() {
     { name: "ModelRegistry", addr: NET.models },
     { name: "OperatorRegistry", addr: NET.registry },
     { name: "Sentinel (consumer)", addr: NET.sentinel },
-    { name: "OracleCoordinator v1 (superseded)", addr: NET.legacyCoordinator },
+    ...(NET.legacyCoordinator !== "0x0000000000000000000000000000000000000000"
+      ? [{ name: "OracleCoordinator v1 (superseded)", addr: NET.legacyCoordinator }]
+      : []),
   ];
 
   return (

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description: "Live dashboard: requests, fulfillments, fees, and Sentinel autonomous reports.",
   openGraph: {
     title: "Bot Oracle · AI compute oracle on BOT Chain",
-    description: "Paid AI inference oracle: contracts request on-chain, operators fulfill, results anchored on-chain. Live on BOT Chain Testnet.",
+    description: "Paid AI inference oracle: contracts request on-chain, operators fulfill, results anchored on-chain. Live on BOT Chain mainnet.",
     images: [{ url: "/logo-banner.png", width: 1520, height: 192 }],
   },
 };
