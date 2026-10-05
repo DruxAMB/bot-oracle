@@ -88,6 +88,10 @@ export type DashData = {
   legacyRequests: bigint;
   legacyFulfilled: number;
   legacyFeesWei: bigint;
+  /** Distinct requester EOAs (real users) - contracts like Sentinel excluded. */
+  uniquePayers: number;
+  /** Distinct requester contracts (e.g. Sentinel) - disclosed separately. */
+  contractConsumers: number;
   offline?: string;
 };
 
@@ -96,6 +100,7 @@ const EMPTY: DashData = {
   minStake: 0n, models: [], operators: [], sentinelTicks: 0n, sentinelReport: "",
   sentinelReportAt: 0, sentinelBalance: 0n, sentinelMinInterval: 0, sentinelLastTickAt: 0,
   requests: [], legacyRequests: 0n, legacyFulfilled: 0, legacyFeesWei: 0n,
+  uniquePayers: 0, contractConsumers: 0,
 };
 
 export async function loadDash(): Promise<DashData> {
@@ -130,11 +135,14 @@ export async function loadDash(): Promise<DashData> {
       legacyCoord.accruedProtocolFees().catch(() => 0n),
     ]);
     const legacyTotal = legacyNext - 1n;
-    const legacyFulfilled = await Promise.all(
+    const legacyReqs = await Promise.all(
       Array.from({ length: Math.min(Number(legacyTotal), 500) }, (_, i) =>
-        legacyCoord.requests(i + 1).then((r) => Number(r.status))
+        legacyCoord.requests(i + 1)
       )
-    ).then((ss) => ss.filter((s) => s === 1 || s === 4).length);
+    );
+    const legacyFulfilled = legacyReqs.filter(
+      (r) => Number(r.status) === 1 || Number(r.status) === 4
+    ).length;
 
     const from = Math.max(0, block - 50_000);
     const [sentLogs, fulfilledLogs, modelLogs] = await Promise.all([
@@ -170,6 +178,26 @@ export async function loadDash(): Promise<DashData> {
       })
     );
 
+    // One enumeration pass feeds both the fulfilled count and the unique
+    // requester set. Contract requesters (Sentinel) are separated from EOAs -
+    // "unique payers" must mean real wallets, not our own consumer contract.
+    const reqs = await Promise.all(
+      Array.from({ length: Math.min(Number(nextId - 1n), 500) }, (_, i) =>
+        coord.requests(i + 1)
+      )
+    );
+    const fulfilledCount = reqs.filter(
+      (r) => Number(r.status) === 1 || Number(r.status) === 4
+    ).length;
+
+    const requesters = new Set<string>(reqs.map((r) => r.requester.toLowerCase()));
+    for (const r of legacyReqs) requesters.add(r.requester.toLowerCase());
+    const codes = await Promise.all(
+      [...requesters].map((a) => p.getCode(a).catch(() => "0x"))
+    );
+    const contractConsumers = codes.filter((c) => c !== "0x").length;
+    const uniquePayers = requesters.size - contractConsumers;
+
     const recent = sentLogs.slice(-10).reverse();
     const now = Math.floor(Date.now() / 1000);
     const rows: RequestRow[] = await Promise.all(
@@ -193,12 +221,7 @@ export async function loadDash(): Promise<DashData> {
     return {
       block,
       totalRequests: nextId - 1n,
-      // exact count via enumeration - the log query is windowed
-      fulfilled: await Promise.all(
-        Array.from({ length: Math.min(Number(nextId - 1n), 500) }, (_, i) =>
-          coord.requests(i + 1).then((r) => Number(r.status))
-        )
-      ).then((ss) => ss.filter((s) => s === 1 || s === 4).length),
+      fulfilled: fulfilledCount,
       feesWei: fees,
       operatorCount: ops,
       minStake: stake,
@@ -214,6 +237,8 @@ export async function loadDash(): Promise<DashData> {
       legacyRequests: legacyTotal,
       legacyFulfilled,
       legacyFeesWei: legacyFees,
+      uniquePayers,
+      contractConsumers,
     };
   } catch (e) {
     return { ...EMPTY, offline: e instanceof Error ? e.message.slice(0, 160) : "rpc unreachable" };

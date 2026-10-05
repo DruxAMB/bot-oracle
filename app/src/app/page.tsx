@@ -36,17 +36,26 @@ export default async function Home() {
     ? Math.max(0, d.sentinelLastTickAt + d.sentinelMinInterval - now)
     : null;
 
+  const hasLegacy = d.legacyRequests > 0n;
   const stats = [
     {
       label: "Requests served",
       value: String(d.totalRequests + d.legacyRequests),
-      sub: `${d.totalRequests} on v2 · ${d.legacyRequests} on v1`,
+      sub: hasLegacy ? `${d.totalRequests} on v2 · ${d.legacyRequests} on v1` : "",
     },
     { label: "Fulfilled", value: String(d.fulfilled + d.legacyFulfilled), sub: "" },
     {
+      label: "Unique payers",
+      value: String(d.uniquePayers),
+      sub:
+        d.contractConsumers > 0
+          ? `wallets · +${d.contractConsumers} contract consumer${d.contractConsumers > 1 ? "s" : ""}`
+          : "distinct wallets",
+    },
+    {
       label: "Protocol fees",
       value: `${Number(formatEther(d.feesWei + d.legacyFeesWei)).toFixed(4)} BOT`,
-      sub: "across v1 + v2",
+      sub: hasLegacy ? "across v1 + v2" : "10% of each query",
     },
     { label: "Operators", value: String(d.operatorCount), sub: "" },
     { label: "Min stake", value: `${formatEther(d.minStake)} BOT`, sub: "" },
@@ -104,7 +113,7 @@ export default async function Home() {
             </div>
           </header>
 
-        <section aria-label="network stats" className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+        <section aria-label="network stats" className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-8">
           {stats.map((s) => (
             <div key={s.label} className="rounded-lg border border-border bg-card p-4">
               <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
