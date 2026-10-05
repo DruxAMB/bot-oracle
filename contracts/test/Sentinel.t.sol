@@ -2,10 +2,17 @@
 pragma solidity ^0.8.30;
 
 import {Test} from "forge-std/Test.sol";
+import {ERC1967Proxy} from "openzeppelin-contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {OracleCoordinator} from "../src/OracleCoordinator.sol";
 import {OperatorRegistry} from "../src/OperatorRegistry.sol";
 import {ModelRegistry} from "../src/ModelRegistry.sol";
 import {Sentinel} from "../src/Sentinel.sol";
+
+contract SentinelV2Mock is Sentinel {
+    function version() external pure returns (uint256) {
+        return 2;
+    }
+}
 
 contract SentinelTest is Test {
     OracleCoordinator coordinator;
@@ -21,17 +28,34 @@ contract SentinelTest is Test {
     uint256 constant PRICE = 0.001 ether;
     uint64 constant INTERVAL = 15 minutes;
 
+    function _deploySentinel() internal returns (Sentinel) {
+        return Sentinel(payable(address(new ERC1967Proxy(
+            address(new Sentinel()),
+            abi.encodeCall(Sentinel.initialize, (
+                address(this), address(coordinator), MODEL, PRICE, INTERVAL, 300_000,
+                "Report on BOT Chain ecosystem state."
+            ))
+        ))));
+    }
+
     function setUp() public {
-        models = new ModelRegistry();
-        operators = new OperatorRegistry(0.1 ether, 1 hours);
-        coordinator = new OracleCoordinator(
-            address(models), address(operators), treasury, 1000, 1 hours, 1 days, 0.01 ether
-        );
+        models = ModelRegistry(address(new ERC1967Proxy(
+            address(new ModelRegistry()),
+            abi.encodeCall(ModelRegistry.initialize, (address(this)))
+        )));
+        operators = OperatorRegistry(address(new ERC1967Proxy(
+            address(new OperatorRegistry()),
+            abi.encodeCall(OperatorRegistry.initialize, (address(this), 0.1 ether, 1 hours))
+        )));
+        coordinator = OracleCoordinator(address(new ERC1967Proxy(
+            address(new OracleCoordinator()),
+            abi.encodeCall(OracleCoordinator.initialize, (
+                address(this), address(models), address(operators), treasury, 1000, 1 hours, 1 days, 0.01 ether
+            ))
+        )));
         operators.setSlasher(address(coordinator));
         models.setModel(MODEL, PRICE, keccak256("echo-v1"), "echo:local", true);
-        sentinel = new Sentinel(
-            address(coordinator), MODEL, PRICE, INTERVAL, 300_000, "Report on BOT Chain ecosystem state."
-        );
+        sentinel = _deploySentinel();
         vm.deal(operator, 10 ether);
         vm.prank(operator);
         operators.register{value: 0.1 ether}("https://node.local");
@@ -57,9 +81,7 @@ contract SentinelTest is Test {
     }
 
     function test_tickRevertsWhenUnfunded() public {
-        Sentinel poor = new Sentinel(
-            address(coordinator), MODEL, PRICE, INTERVAL, 300_000, "p"
-        );
+        Sentinel poor = _deploySentinel();
         vm.expectRevert(abi.encodeWithSelector(Sentinel.InsufficientFunds.selector, 0, PRICE));
         poor.tick();
     }
@@ -122,20 +144,43 @@ contract SentinelTest is Test {
     }
 
     function test_setOracleRepoints() public {
-        OracleCoordinator other = new OracleCoordinator(
-            address(models), address(operators), treasury, 0, 1 hours, 1 days, 0.01 ether
-        );
+        OracleCoordinator other = OracleCoordinator(address(new ERC1967Proxy(
+            address(new OracleCoordinator()),
+            abi.encodeCall(OracleCoordinator.initialize, (
+                address(this), address(models), address(operators), treasury, 0, 1 hours, 1 days, 0.01 ether
+            ))
+        )));
         sentinel.setOracle(address(other));
         assertEq(address(sentinel.oracle()), address(other));
     }
 
     function test_tickAcceptsTopUp() public {
-        Sentinel poor = new Sentinel(
-            address(coordinator), MODEL, PRICE, INTERVAL, 300_000, "p"
-        );
+        Sentinel poor = _deploySentinel();
         vm.deal(keeper, 1 ether);
         vm.prank(keeper);
         poor.tick{value: PRICE}();
         assertEq(poor.tickIndex(), 1);
+    }
+
+    function test_upgradePreservesPurseReportAndCadence() public {
+        uint256 id = sentinel.tick();
+        vm.prank(operator);
+        coordinator.fulfill(id, abi.encode("pre-upgrade report"));
+        uint256 purse = address(sentinel).balance;
+        address proxy = address(sentinel);
+
+        sentinel.upgradeToAndCall(address(new SentinelV2Mock()), "");
+
+        assertEq(address(sentinel), proxy);
+        assertEq(address(sentinel).balance, purse);
+        assertEq(sentinel.latestReport(), "pre-upgrade report");
+        assertEq(sentinel.tickIndex(), 1);
+        assertEq(SentinelV2Mock(payable(proxy)).version(), 2);
+        // Cadence + tick flow still enforced against pre-upgrade lastTickAt.
+        vm.expectRevert(abi.encodeWithSelector(Sentinel.TooEarly.selector, sentinel.lastTickAt() + INTERVAL));
+        sentinel.tick();
+        vm.warp(block.timestamp + INTERVAL + 1);
+        sentinel.tick();
+        assertEq(sentinel.tickIndex(), 2);
     }
 }

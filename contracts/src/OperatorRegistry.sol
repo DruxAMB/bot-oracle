@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
+import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {ReentrancyGuard} from "openzeppelin-contracts/utils/ReentrancyGuard.sol";
 
 /// @notice Operator staking registry for oracle nodes.
@@ -9,7 +11,10 @@ import {ReentrancyGuard} from "openzeppelin-contracts/utils/ReentrancyGuard.sol"
 /// unbonding machinery so v2 can open registration without a contract migration.
 /// Trust model is documented honestly: operators are slashable by the arbitrator
 /// (owner for v1), NOT by trustless fraud proofs - that's the roadmap.
-contract OperatorRegistry is Ownable, ReentrancyGuard {
+/// UUPS-upgradeable: the proxy address is permanent; logic upgrades keep it.
+/// @dev ReentrancyGuard uses ERC-7201 namespaced storage in OZ 5.7 - safe in
+/// upgradeable contracts with no initializer needed.
+contract OperatorRegistry is Initializable, OwnableUpgradeable, ReentrancyGuard, UUPSUpgradeable {
     struct Operator {
         uint256 stake;
         uint256 unstakeRequestedAt; // 0 = not unstaking
@@ -43,10 +48,18 @@ contract OperatorRegistry is Ownable, ReentrancyGuard {
     error AlreadyRegistered(address operator);
     error NothingToWithdraw();
 
-    constructor(uint256 minStake_, uint256 unbondingPeriod_) Ownable(msg.sender) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address owner_, uint256 minStake_, uint256 unbondingPeriod_) external initializer {
+        __Ownable_init(owner_);
         minStake = minStake_;
         unbondingPeriod = unbondingPeriod_;
     }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     function register(string calldata nodeEndpoint) external payable {
         if (msg.value < minStake) revert StakeBelowMinimum(msg.value, minStake);
@@ -129,4 +142,8 @@ contract OperatorRegistry is Ownable, ReentrancyGuard {
     function operatorCount() external view returns (uint256) {
         return operatorList.length;
     }
+
+    /// @dev Storage gap - reserve slots so future versions can add state
+    /// variables without shifting the layout of inheriting/upgraded code.
+    uint256[50] private __gap;
 }

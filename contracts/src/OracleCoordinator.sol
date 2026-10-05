@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
+import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {ReentrancyGuard} from "openzeppelin-contracts/utils/ReentrancyGuard.sol";
 import {ModelRegistry} from "./ModelRegistry.sol";
 import {OperatorRegistry} from "./OperatorRegistry.sol";
@@ -12,7 +14,10 @@ import {IOracleConsumer} from "./IOracleConsumer.sol";
 /// Trust model v1: single staked operator set, slashable by an arbitrator -
 /// honest centralization, with multi-operator consensus on the roadmap.
 /// Fees are native BOT only; USDT billing arrives with the subscription vault.
-contract OracleCoordinator is Ownable, ReentrancyGuard {
+/// UUPS-upgradeable: the proxy address is permanent; logic upgrades keep it.
+/// @dev ReentrancyGuard uses ERC-7201 namespaced storage in OZ 5.7 - safe in
+/// upgradeable contracts with no initializer needed.
+contract OracleCoordinator is Initializable, OwnableUpgradeable, ReentrancyGuard, UUPSUpgradeable {
     enum Status {
         Pending,
         Fulfilled,
@@ -36,20 +41,22 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
         address challenger;
     }
 
-    ModelRegistry public immutable models;
-    OperatorRegistry public immutable operators;
+    /// @dev Storage, not immutable - a proxy's state lives in the proxy, so
+    /// anything baked into impl bytecode would be invisible/wrong here.
+    ModelRegistry public models;
+    OperatorRegistry public operators;
     address public treasury;
     uint16 public protocolFeeBps;
     uint64 public requestTimeout;
     uint64 public challengeWindow;
     uint256 public challengeBond;
-    uint256 public minCallbackGas = 50_000;
+    uint64 public minCallbackGas;
     /// @notice Hard ceiling on the gas a consumer's callback may burn - the
     /// OPERATOR pays that gas inside fulfill(), so an unbounded limit is a
     /// griefing vector on the fulfilling operator.
-    uint64 public maxCallbackGas = 1_000_000;
+    uint64 public maxCallbackGas;
 
-    uint256 public nextRequestId = 1;
+    uint256 public nextRequestId;
     uint256 public accruedProtocolFees;
     mapping(uint256 => Request) public requests;
     /// @notice Pull-balance fallback for recipients that can't accept a bare
@@ -87,7 +94,13 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
     error CallbackGasTooHigh(uint64 given, uint256 max);
     error NothingToWithdraw();
 
-    constructor(
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
+        address owner_,
         address models_,
         address operators_,
         address treasury_,
@@ -95,8 +108,9 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
         uint64 requestTimeout_,
         uint64 challengeWindow_,
         uint256 challengeBond_
-    ) Ownable(msg.sender) {
+    ) external initializer {
         if (models_ == address(0) || operators_ == address(0) || treasury_ == address(0)) revert ZeroAddress();
+        __Ownable_init(owner_);
         models = ModelRegistry(models_);
         operators = OperatorRegistry(operators_);
         treasury = treasury_;
@@ -104,7 +118,12 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
         requestTimeout = requestTimeout_;
         challengeWindow = challengeWindow_;
         challengeBond = challengeBond_;
+        minCallbackGas = 50_000;
+        maxCallbackGas = 1_000_000;
+        nextRequestId = 1;
     }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     /// @notice Escrow `modelId`'s price and open a request. The node picks it up
     /// from the RequestSent event, runs inference, and calls fulfill().
@@ -264,4 +283,8 @@ contract OracleCoordinator is Ownable, ReentrancyGuard {
         minCallbackGas = lo;
         maxCallbackGas = hi;
     }
+
+    /// @dev Storage gap - reserve slots so future versions can add state
+    /// variables without shifting the layout of inheriting/upgraded code.
+    uint256[50] private __gap;
 }

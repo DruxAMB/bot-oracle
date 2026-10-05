@@ -382,8 +382,18 @@ Single repo, MIT license, lockfile committed - same conventions as `creditpass`.
 - **v1 fees**: native BOT only; USDT arrives via prepaid subscription vault in
   Phase 2 (keeps `request()` signature stable).
 - **Toolchain**: Foundry v1.8.x (`forge`/`cast`); deps `forge-std@1.16.2`,
-  `openzeppelin-contracts@5.7.0` via `forge install --no-git` (flat repo,
-  versions pinned here).
+  `openzeppelin-contracts@5.7.0` + `openzeppelin-contracts-upgradeable@5.7.0`
+  via `forge install` (flat libs, gitignored, versions pinned in foundry.lock).
+- **Upgradeability**: all four contracts are UUPS proxies (OZ 5.7
+  `ERC1967Proxy` + `UUPSUpgradeable`, `_authorizeUpgrade` = onlyOwner). The
+  PROXY addresses are the permanent public addresses - logic upgrades keep
+  state + address. Deliberate trade-off: the owner key can swap ALL logic, so
+  it is omnipotent - plan is to move ownership to a multisig once a Safe
+  deploy exists on BOT Chain. One final address change at v3 deploy; never
+  again after that. Upgrade runbook: `TARGET=<models|operators|coordinator|
+  sentinel> PROXY=<addr> forge script script/Upgrade.s.sol` - deploys a fresh
+  impl, calls `upgradeToAndCall`. Storage rule: append-only state vars; each
+  contract reserves a 50-slot `__gap`; never reorder existing fields.
 - **Slasher role**: OperatorRegistry.slash is callable by owner OR the
   coordinator's registered `slasher` - slashing power lives inside the
   dispute-resolution path, not an EOA.

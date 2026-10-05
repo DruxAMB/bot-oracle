@@ -2,10 +2,21 @@
 pragma solidity ^0.8.30;
 
 import {Test} from "forge-std/Test.sol";
+import {ERC1967Proxy} from "openzeppelin-contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
+import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {OracleCoordinator} from "../src/OracleCoordinator.sol";
 import {OperatorRegistry} from "../src/OperatorRegistry.sol";
 import {ModelRegistry} from "../src/ModelRegistry.sol";
 import {IOracleConsumer} from "../src/IOracleConsumer.sol";
+
+/// Simulates a v2 logic drop: same storage layout, one new function - proves
+/// upgradeToAndCall swaps behavior while the proxy keeps address + state.
+contract OracleCoordinatorV2Mock is OracleCoordinator {
+    function version() external pure returns (uint256) {
+        return 2;
+    }
+}
 
 contract MockConsumer is IOracleConsumer {
     bytes public lastOutput;
@@ -75,11 +86,20 @@ contract OracleCoordinatorTest is Test {
     uint256 constant MIN_STAKE = 1 ether;
 
     function setUp() public {
-        models = new ModelRegistry();
-        operators = new OperatorRegistry(MIN_STAKE, 3 days);
-        coordinator = new OracleCoordinator(
-            address(models), address(operators), treasury, CUT_BPS, TIMEOUT, CHALLENGE_WINDOW, BOND
-        );
+        models = ModelRegistry(address(new ERC1967Proxy(
+            address(new ModelRegistry()),
+            abi.encodeCall(ModelRegistry.initialize, (address(this)))
+        )));
+        operators = OperatorRegistry(address(new ERC1967Proxy(
+            address(new OperatorRegistry()),
+            abi.encodeCall(OperatorRegistry.initialize, (address(this), MIN_STAKE, 3 days))
+        )));
+        coordinator = OracleCoordinator(address(new ERC1967Proxy(
+            address(new OracleCoordinator()),
+            abi.encodeCall(OracleCoordinator.initialize, (
+                address(this), address(models), address(operators), treasury, CUT_BPS, TIMEOUT, CHALLENGE_WINDOW, BOND
+            ))
+        )));
         models.setModel(MODEL, PRICE, keccak256("image-v1"), "openai:gpt-4o-mini", true);
         operators.setSlasher(address(coordinator));
         vm.deal(operator, 10 ether);
@@ -277,6 +297,44 @@ contract OracleCoordinatorTest is Test {
         uint256 tBefore = treasury.balance;
         coordinator.withdrawTreasury();
         assertEq(treasury.balance, tBefore + PRICE * CUT_BPS / 10_000);
+    }
+
+    function test_upgradePreservesStateAndAddress() public {
+        uint256 id = _request(address(0));
+        vm.prank(operator);
+        coordinator.fulfill(id, "x");
+        uint256 fees = coordinator.accruedProtocolFees();
+        address proxy = address(coordinator);
+
+        coordinator.upgradeToAndCall(address(new OracleCoordinatorV2Mock()), "");
+
+        assertEq(address(coordinator), proxy);
+        (address requester,,,,,,,, OracleCoordinator.Status status,,,) = coordinator.requests(id);
+        assertEq(requester, alice);
+        assertEq(uint256(status), uint256(OracleCoordinator.Status.Fulfilled));
+        assertEq(coordinator.accruedProtocolFees(), fees);
+        // New logic is live at the same address.
+        assertEq(OracleCoordinatorV2Mock(proxy).version(), 2);
+    }
+
+    function test_upgradeRevertsForNonOwner() public {
+        OracleCoordinatorV2Mock v2 = new OracleCoordinatorV2Mock();
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, alice));
+        coordinator.upgradeToAndCall(address(v2), "");
+    }
+
+    function test_cannotReinitializeProxyOrImpl() public {
+        vm.expectRevert(Initializable.InvalidInitialization.selector);
+        coordinator.initialize(
+            address(this), address(models), address(operators), treasury, CUT_BPS, TIMEOUT, CHALLENGE_WINDOW, BOND
+        );
+        // And the bare implementation is locked too - no takeover via init.
+        OracleCoordinator impl = new OracleCoordinator();
+        vm.expectRevert(Initializable.InvalidInitialization.selector);
+        impl.initialize(
+            address(this), address(models), address(operators), treasury, CUT_BPS, TIMEOUT, CHALLENGE_WINDOW, BOND
+        );
     }
 
     // helper: struct-free read of status

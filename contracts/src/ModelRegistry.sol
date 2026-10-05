@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
+import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /// @notice Registry of models the oracle will serve, with per-query pricing.
 /// Prices are denominated in wei of the native token (BOT) - v1 charges BOT only.
 /// USDT-denominated billing arrives with the subscription vault (Phase 2).
-contract ModelRegistry is Ownable {
+/// UUPS-upgradeable: the proxy address is permanent; logic upgrades keep it.
+contract ModelRegistry is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     struct Model {
         uint256 priceWei;        // fee escrowed per request
         bytes32 containerHash;   // commitment to the model image/artifact the node runs
@@ -21,7 +24,16 @@ contract ModelRegistry is Ownable {
     error ModelNotFound(bytes32 modelId);
     error ModelInactive(bytes32 modelId);
 
-    constructor() Ownable(msg.sender) {}
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address owner_) external initializer {
+        __Ownable_init(owner_);
+    }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     function setModel(
         bytes32 modelId,
@@ -41,4 +53,8 @@ contract ModelRegistry is Ownable {
         if (!m.active) revert ModelInactive(modelId);
         return m.priceWei;
     }
+
+    /// @dev Storage gap - reserve slots so future versions can add state
+    /// variables without shifting the layout of inheriting/upgraded code.
+    uint256[50] private __gap;
 }

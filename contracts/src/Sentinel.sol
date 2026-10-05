@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
+import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {OracleCoordinator} from "./OracleCoordinator.sol";
 import {IOracleConsumer} from "./IOracleConsumer.sol";
 import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
@@ -11,7 +13,8 @@ import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
 /// funded balance and stores each report on-chain. Every cycle is request +
 /// fulfill + callback - the product's own activity feed, visible on the explorer.
 /// Anyone may fund() it; the keeper just calls tick().
-contract Sentinel is IOracleConsumer, Ownable {
+/// UUPS-upgradeable: the proxy address is permanent; logic upgrades keep it.
+contract Sentinel is IOracleConsumer, Initializable, OwnableUpgradeable, UUPSUpgradeable {
     OracleCoordinator public oracle;
     bytes32 public modelId;
     uint256 public queryPrice;
@@ -36,14 +39,21 @@ contract Sentinel is IOracleConsumer, Ownable {
     error InsufficientFunds(uint256 have, uint256 need);
     error NotOracle(address caller);
 
-    constructor(
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
+        address owner_,
         address oracle_,
         bytes32 modelId_,
         uint256 queryPrice_,
         uint64 minInterval_,
         uint64 callbackGas_,
         string memory promptText_
-    ) Ownable(msg.sender) {
+    ) external initializer {
+        __Ownable_init(owner_);
         oracle = OracleCoordinator(oracle_);
         modelId = modelId_;
         queryPrice = queryPrice_;
@@ -51,6 +61,8 @@ contract Sentinel is IOracleConsumer, Ownable {
         callbackGas = callbackGas_;
         promptText = promptText_;
     }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     /// @notice Anyone may top up the query fund - community-sponsored autonomy.
     function fund() external payable {}
@@ -108,8 +120,8 @@ contract Sentinel is IOracleConsumer, Ownable {
         callbackGas = v;
     }
 
-    /// @notice Repoint at a successor coordinator (v2 migration path) without
-    /// redeploying the consumer and losing its report history.
+    /// @notice Repoint at a successor coordinator (e.g. if a future
+    /// non-upgradeable migration is ever needed) without losing report history.
     function setOracle(address oracle_) external onlyOwner {
         oracle = OracleCoordinator(oracle_);
     }
@@ -120,4 +132,8 @@ contract Sentinel is IOracleConsumer, Ownable {
         (bool ok,) = to.call{value: address(this).balance}("");
         require(ok, "rescue failed");
     }
+
+    /// @dev Storage gap - reserve slots so future versions can add state
+    /// variables without shifting the layout of inheriting/upgraded code.
+    uint256[50] private __gap;
 }
