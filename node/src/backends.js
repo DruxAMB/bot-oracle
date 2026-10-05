@@ -41,6 +41,7 @@ const BDEX = {
 };
 const FACTORY_ABI = ["function getPair(address,address) view returns (address)"];
 const PAIR_ABI = ["function getReserves() view returns (uint112,uint112,uint32)", "function token0() view returns (address)"];
+const ERC20_ABI = ["function decimals() view returns (uint8)", "function symbol() view returns (string)"];
 
 async function chainSnapshot(cfg) {
   const p = cfg.provider;
@@ -60,15 +61,21 @@ async function chainSnapshot(cfg) {
 
   // BDEX reserves - best-effort; pair may not exist yet on a fresh deployment
   try {
+    if ((await p.getCode(BDEX.factory)) === "0x") {
+      throw new Error(`no contract at factory ${BDEX.factory} on chain ${cfg.chainId}`);
+    }
     const factory = new Contract(BDEX.factory, FACTORY_ABI, p);
     const pairAddr = await factory.getPair(BDEX.wbot, BDEX.usdt);
     if (pairAddr !== "0x0000000000000000000000000000000000000000") {
       const pair = new Contract(pairAddr, PAIR_ABI, p);
-      const [r0, r1] = await pair.getReserves();
-      const t0 = (await pair.token0()).toLowerCase();
-      const [wbotR, usdtR] = t0 === BDEX.wbot.toLowerCase() ? [r0, r1] : [r1, r0];
-      const wbot = Number(formatEther(wbotR));
-      const usdt = Number(formatEther(usdtR)); // testnet USDT is 18dec stand-in
+      const wbotT = new Contract(BDEX.wbot, ERC20_ABI, p);
+      const usdtT = new Contract(BDEX.usdt, ERC20_ABI, p);
+      const [[r0, r1], t0, wbotDec, usdtDec] = await Promise.all([
+        pair.getReserves(), pair.token0(), wbotT.decimals(), usdtT.decimals(),
+      ]);
+      const [wbotR, usdtR] = t0.toLowerCase() === BDEX.wbot.toLowerCase() ? [r0, r1] : [r1, r0];
+      const wbot = Number(formatUnits(wbotR, wbotDec));
+      const usdt = Number(formatUnits(usdtR, usdtDec));
       snap.pair = { wbot, usdt, price: wbot > 0 ? usdt / wbot : 0 };
     }
   } catch (e) {

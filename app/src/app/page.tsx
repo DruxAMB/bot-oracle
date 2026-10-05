@@ -106,7 +106,7 @@ export default async function Home() {
             </div>
           </header>
 
-        <section aria-label="network stats" className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-8">
+        <section aria-label="network stats" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
           {stats.slice(0, 2).map((s) => (
             <div key={s.label} className="rounded-lg border border-border bg-card p-4">
               <div className="text-xs text-muted-foreground mb-1">{s.label}</div>

@@ -26,7 +26,7 @@ export default function ConnectsStat({
       <div className="text-xs text-muted-foreground mb-1">Wallets connected</div>
       <div className="text-xl font-medium text-foreground">{count ?? "…"}</div>
       <div className="text-[11px] text-steel mt-0.5">
-        {payers} on-chain payer{payers === 1 ? "" : "s"}
+        {payers} payer{payers === 1 ? "" : "s"}
         {contracts > 0 ? ` · +${contracts} contract` : ""}
       </div>
     </div>
