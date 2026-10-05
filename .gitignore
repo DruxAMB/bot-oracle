@@ -12,3 +12,8 @@ contracts/broadcast/
 # node runtime state
 node/state/
 gateway/state/
+
+# agent tooling + video render artifacts
+.agents/
+brag-output*/
+onchain-records.png

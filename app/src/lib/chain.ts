@@ -1,17 +1,17 @@
 import { JsonRpcProvider, Contract, AbiCoder, formatEther } from "ethers";
 
 export const NET = {
-  name: process.env.NEXT_PUBLIC_NET_NAME ?? "BOT Chain Testnet",
-  rpc: process.env.NEXT_PUBLIC_RPC_URL ?? "https://rpc.bohr.life",
-  chainId: Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? "968"),
-  explorer: process.env.NEXT_PUBLIC_EXPLORER ?? "https://scan.bohr.life",
-  coordinator: process.env.NEXT_PUBLIC_COORDINATOR ?? "0x4861Ff97A82436d64514C0B119c4796F46a4d8Da",
-  models: process.env.NEXT_PUBLIC_MODELS ?? "0xb208fb3016c14b0946bf3FBbe1Def28d72F63193",
-  registry: process.env.NEXT_PUBLIC_REGISTRY ?? "0xf22dA276EAA3c4de433115a95111907A6338D3A5",
-  sentinel: process.env.NEXT_PUBLIC_SENTINEL ?? "0x1ea8e8429Ecae0Dfa8dEbb93983DDe93EA31a014",
+  name: process.env.NEXT_PUBLIC_NET_NAME ?? "BOT Chain",
+  rpc: process.env.NEXT_PUBLIC_RPC_URL ?? "https://rpc.botchain.ai",
+  chainId: Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? "677"),
+  explorer: process.env.NEXT_PUBLIC_EXPLORER ?? "https://scan.botchain.ai",
+  coordinator: process.env.NEXT_PUBLIC_COORDINATOR ?? "0x8f487264E1B183F588CAc678D000754D3bd9B07E",
+  models: process.env.NEXT_PUBLIC_MODELS ?? "0x1C8695E71faB85fFdd4C0c5ac588Ef6a3EFF5B62",
+  registry: process.env.NEXT_PUBLIC_REGISTRY ?? "0x6bbf22FD91d8869C2B446a5E9CD9592c61Ab64D8",
+  sentinel: process.env.NEXT_PUBLIC_SENTINEL ?? "0x2ca8743230F189e72A137AB5EfF3341Be3f35023",
   // Superseded v1 coordinator - read so the stats reflect total history,
-  // not just the current deployment.
-  legacyCoordinator: process.env.NEXT_PUBLIC_LEGACY_COORDINATOR ?? "0x7F7e5256cA568B981e1a09642d8F756D9c89F706",
+  // not just the current deployment. Mainnet has no legacy deployment.
+  legacyCoordinator: process.env.NEXT_PUBLIC_LEGACY_COORDINATOR ?? "0x0000000000000000000000000000000000000000",
 };
 
 const COORD_ABI = [

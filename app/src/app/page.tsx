@@ -281,7 +281,7 @@ export default async function Home() {
               <CopyCommand cmd="npm i https://raw.githubusercontent.com/DruxAMB/bot-oracle/main/dist/bot-oracle-sdk-0.1.1.tgz" />
             </div>
             <pre className="overflow-x-auto rounded bg-background border border-border p-3 text-xs text-secondary">{`import { OracleClient } from "@bot-oracle/sdk";
-const o = new OracleClient({ rpcUrl, chainId: 968, coordinator, models, signer });
+const o = new OracleClient({ rpcUrl, chainId: 677, coordinator, models, signer });
 const value = await o.priceOf(OracleClient.modelId("echo:v1"));
 const { requestId } = await o.request({ modelId: OracleClient.modelId("echo:v1"), prompt: "hello", value });
 await o.awaitResult(requestId);

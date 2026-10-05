@@ -12,7 +12,7 @@
 $ErrorActionPreference = "SilentlyContinue"
 $root = Split-Path -Parent $PSScriptRoot
 
-function Ensure-Service($name, $workDir, $logDir) {
+function Ensure-Service($name, $workDir, $logDir, $envFile) {
     $running = Get-CimInstance Win32_Process -Filter "Name='node.exe'" |
         Where-Object { $_.CommandLine -like "*--service=$name*" } |
         Select-Object -First 1
@@ -26,7 +26,7 @@ function Ensure-Service($name, $workDir, $logDir) {
         }
     }
     $p = Start-Process -FilePath "node" `
-        -ArgumentList "--env-file=.env.testnet", "src/index.js", "--service=$name" `
+        -ArgumentList "--env-file=$envFile", "src/index.js", "--service=$name" `
         -WorkingDirectory $workDir `
         -RedirectStandardOutput (Join-Path $logDir "$name.log") `
         -RedirectStandardError (Join-Path $logDir "$name.err") `
@@ -34,5 +34,7 @@ function Ensure-Service($name, $workDir, $logDir) {
     Write-Output "$name started (pid $($p.Id))"
 }
 
-Ensure-Service "node"    (Join-Path $root "node")    (Join-Path $root "node\state")
-Ensure-Service "gateway" (Join-Path $root "gateway") (Join-Path $root "gateway\state")
+Ensure-Service "node"           (Join-Path $root "node")    (Join-Path $root "node\state")    ".env.testnet"
+Ensure-Service "gateway"        (Join-Path $root "gateway") (Join-Path $root "gateway\state") ".env.testnet"
+Ensure-Service "mainnet-node"   (Join-Path $root "node")    (Join-Path $root "node\state")    ".env.mainnet"
+Ensure-Service "mainnet-gw"     (Join-Path $root "gateway") (Join-Path $root "gateway\state") ".env.mainnet"

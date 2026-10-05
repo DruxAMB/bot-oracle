@@ -15,12 +15,12 @@ contract DeploySentinel is Script {
         Sentinel sentinel = new Sentinel(
             oracle,
             modelId,
-            0.001 ether,  // must match the model's registry price
-            5 minutes,    // testnet cadence; mainnet uses 30-60min
+            0.02 ether,   // must match the model's registry price
+            30 minutes,   // mainnet cadence
             300_000,
             "Summarize the state of the BOT Chain ecosystem from the attached data."
         );
-        (bool ok,) = address(sentinel).call{value: 0.5 ether}("");
+        (bool ok,) = address(sentinel).call{value: 2 ether}("");
         require(ok, "fund failed");
         vm.stopBroadcast();
 
