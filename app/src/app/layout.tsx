@@ -9,13 +9,18 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://bot-oracle.druxamb.dev"),
+  metadataBase: new URL("https://botoracle.druxamb.dev"),
   title: "Bot Oracle · AI compute oracle on BOT Chain",
   description: "Live dashboard: requests, fulfillments, fees, and Sentinel autonomous reports.",
   openGraph: {
     title: "Bot Oracle · AI compute oracle on BOT Chain",
     description: "Paid AI inference oracle: contracts request on-chain, operators fulfill, results anchored on-chain. Live on BOT Chain mainnet.",
-    images: [{ url: "/logo-banner.png", width: 1520, height: 192 }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@botoracle_",
+    images: ["/og-image.png"],
   },
 };
 

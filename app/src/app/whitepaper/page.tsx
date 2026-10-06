@@ -96,7 +96,7 @@ export default function Whitepaper() {
             A paid AI inference oracle for BOT Chain
           </p>
           <p className="text-xs text-muted-foreground mt-2">
-            Whitepaper v0.1 · September 2026 · status: live on {NET.name} (chainId {CHAIN_ID}) ·{" "}
+            Whitepaper v0.2 · October 2026 · status: live on {NET.name} (chainId {CHAIN_ID}) ·{" "}
             <a
               href="https://github.com/DruxAMB/bot-oracle/blob/main/LICENSE"
               target="_blank"
@@ -135,9 +135,10 @@ export default function Whitepaper() {
               submits a paid request naming a model and an input; a staked off-chain operator runs the
               inference; the result and its output hash are written back on-chain, atomically invoking a
               consumer callback when one is set. The protocol escrows each fee, pays the operator at
-              fulfillment, and retains a 10% protocol cut. On testnet the system has served hundreds of
-              requests end to end, including a first-party autonomous consumer, Sentinel, that pays for a
-              market-intelligence report every few minutes. The oracle turns "AI on-chain" from a roadmap
+              fulfillment, and retains a 10% protocol cut. On testnet the system served 500+ paid
+              requests end to end with a 100% fulfillment rate, and it is now live on BOT Chain mainnet —
+              including a first-party autonomous consumer, Sentinel, that pays for a market-intelligence
+              report on a fixed interval. The oracle turns "AI on-chain" from a roadmap
               item into a billable, verifiable service.
             </P>
 
@@ -173,7 +174,8 @@ consumer ◀── callback(result) ── escrow pays operator (fee − 10% pro
 
             <H2 id="contracts" n="4">On-chain contracts</H2>
             <P>
-              Four contracts, all source-verified on the explorer. Consumers integrate one interface
+              Four contracts behind UUPS proxies, all source-verified on the explorer — addresses stay
+              stable across upgrades, so integrators never re-pin. Consumers integrate one interface
               (<code className="text-steel">IOracleConsumer</code>) and call a single payable method.
             </P>
             <pre className="mt-3 overflow-x-auto rounded bg-card border border-border p-4 text-xs text-secondary leading-relaxed">{`function request(bytes32 modelId, bytes input,
@@ -229,7 +231,7 @@ function challenge(uint256 requestId) external payable;`}</pre>
             </P>
             <H3>dashboard</H3>
             <P>
-              Server-rendered network view at {a("https://bot-oracle.druxamb.dev", "bot-oracle.druxamb.dev")}:
+              Server-rendered network view at {a("https://botoracle.druxamb.dev", "botoracle.druxamb.dev")}:
               live request feed, fees accrued, operator stats, and the latest Sentinel report.
             </P>
 
@@ -259,9 +261,9 @@ function challenge(uint256 requestId) external payable;`}</pre>
                   </tr>
                 </thead>
                 <tbody className="text-secondary">
-                  <tr className="border-t border-border"><td className="px-4 py-2">v1 (now)</td><td className="px-4 py-2">Single staked operator + challenge bond</td><td className="px-4 py-2">Staked, slashable, replayable</td></tr>
-                  <tr className="border-t border-border"><td className="px-4 py-2">v2</td><td className="px-4 py-2">N-of-M operators, threshold agreement</td><td className="px-4 py-2">Byzantine tolerance for single faults</td></tr>
-                  <tr className="border-t border-border"><td className="px-4 py-2">v3</td><td className="px-4 py-2">TEE attestation / opML fraud proofs</td><td className="px-4 py-2">Verifiable inference</td></tr>
+                  <tr className="border-t border-border"><td className="px-4 py-2">Phase 1 (now)</td><td className="px-4 py-2">Single staked operator + challenge bond</td><td className="px-4 py-2">Staked, slashable, replayable</td></tr>
+                  <tr className="border-t border-border"><td className="px-4 py-2">Phase 2</td><td className="px-4 py-2">N-of-M operators, threshold agreement</td><td className="px-4 py-2">Byzantine tolerance for single faults</td></tr>
+                  <tr className="border-t border-border"><td className="px-4 py-2">Phase 3</td><td className="px-4 py-2">TEE attestation / opML fraud proofs</td><td className="px-4 py-2">Verifiable inference</td></tr>
                 </tbody>
               </table>
             </div>
@@ -282,8 +284,9 @@ function challenge(uint256 requestId) external payable;`}</pre>
               a business: an autonomous contract that pays for a market-intelligence report on a fixed
               interval, runs it through the real LLM backend, and stores the result on-chain where the
               dashboard renders it. Every tick is a request transaction, a fulfill transaction, and a
-              callback, generated by the product itself and auditable on the explorer. 250+ ticks and
-              counting on testnet.
+              callback, generated by the product itself and auditable on the explorer. 500+ paid
+              requests served on testnet (507 on the v2 coordinator alone, every one fulfilled), and
+              Sentinel is now ticking on mainnet.
             </P>
 
             <H2 id="limits" n="10">Limitations and risks</H2>
@@ -305,10 +308,10 @@ function challenge(uint256 requestId) external payable;`}</pre>
                   </tr>
                 </thead>
                 <tbody className="text-secondary">
-                  <tr className="border-t border-border"><td className="px-4 py-2">Done</td><td className="px-4 py-2">Testnet protocol, operator, gateway, SDK, Sentinel, live dashboard</td></tr>
-                  <tr className="border-t border-border"><td className="px-4 py-2">Soon</td><td className="px-4 py-2">VPS for node + gateway with public endpoint (gated on ecosystem funding, no fixed date); npm registry publish</td></tr>
+                  <tr className="border-t border-border"><td className="px-4 py-2">Done</td><td className="px-4 py-2">Testnet protocol (500+ paid requests, 100% fulfilled); mainnet launch on UUPS proxies; operator, gateway, SDK, Sentinel, live dashboard</td></tr>
+                  <tr className="border-t border-border"><td className="px-4 py-2">Soon</td><td className="px-4 py-2">VPS for node + gateway with public endpoint (gated on ecosystem funding, no fixed date); npm registry publish; external security audit</td></tr>
                   <tr className="border-t border-border"><td className="px-4 py-2">Next</td><td className="px-4 py-2">Second operator on separate infra; challenge and slashing exercised on testnet</td></tr>
-                  <tr className="border-t border-border"><td className="px-4 py-2">Later</td><td className="px-4 py-2">Mainnet deployment after audit; TEE/opML verifiable inference; consumer prepaid vaults</td></tr>
+                  <tr className="border-t border-border"><td className="px-4 py-2">Later</td><td className="px-4 py-2">TEE/opML verifiable inference; consumer prepaid vaults; multi-operator threshold agreement</td></tr>
                 </tbody>
               </table>
             </div>
