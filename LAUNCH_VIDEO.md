@@ -19,7 +19,7 @@
 | Aspect | **16:9, 1920×1080** | Terminal/code visuals are wide; doubles for YouTube/embed |
 | FPS | **60** | Motion smoothness is the "jaw-drop" tax — pay it |
 | Codec | MP4, H.264 high profile, yuv420p, CRF ~18 | X ingest spec |
-| Audio | Stereo AAC 192k, SFX-led, dark sub-bass bed ~72bpm | Per owner decision |
+| Audio | Stereo AAC 192k, **SFX-led — no music track**; a synthesized sub-pulse drone (~45–55Hz, 72bpm) is the only continuous element | Owner call: SFX does the talking; the drone is sound design, not music — fader-off audition at mix pass |
 | Voice | **None — kinetic text + SFX** | 85% of X is muted; text IS the narration |
 | Loop | Last frame fades toward void → clean autoplay loop | X loops videos silently |
 | Safe area | All text inside 5% title-safe margin | X crops UI chrome over edges |
@@ -68,7 +68,7 @@ B1 pulse(3s) → B2 lock(3s) → B3 live(7s,HOLD) → B4 proof(5s,HOLD)
 Named: **build → lock → live-hold → proof-hold → cycle → SLAM → resolve.**
 Two shader transitions total (into B6 = the hero moment; out of B6 = release).
 Everything else: hard cuts on the 72bpm grid or velocity-matched CSS moves.
-The music's pulse grid = the Sentinel tick cadence — SFX land on beat.
+The drone's pulse grid = the Sentinel tick cadence — every SFX lands on beat.
 
 ## 5. Beat sheet — every element, every motion verb
 
@@ -209,9 +209,15 @@ the last beat.
 
 ## 6. Sound design — full cue map
 
+**No music track.** SFX carries the entire piece — the Linear/Arc pattern where
+interface sound *is* the score. The single continuous element is a synthesized
+sub-pulse **drone** (~45–55Hz, 72bpm = Sentinel tick cadence): sound design,
+not music — felt not heard, so cues never sit on dead air. Generated like every
+other SFX; a one-fader audition at mix decides if it stays.
+
 | Timecode | Cue | Character |
 |---|---|---|
-| 0:00 | bed enters — sub pulse 72bpm, low-passed | dark, felt not heard |
+| 0:00 | drone enters — sub pulse 72bpm, low-passed | dark, felt not heard |
 | B1 hops | 3× mechanical tick | muted 2.2kHz, 40ms |
 | B1 last hop | warm ping | soft sine, success |
 | B2 typing | keystroke clicks, velocity-varied | mech board |
@@ -225,13 +231,13 @@ the last beat.
 | B4→B5 | chromatic crackle | channel-split texture |
 | B5 orbit | cyclic whoosh + node pings ×4 | circular feel |
 | B5→B6 | domain-warp riser | into the cut |
-| B6 impact | 2-beat silence → sub drop + metal lock + braam tail | the biggest moment |
-| B7 | resolve hum, final soft tick | residual |
+| B6 impact | **drone + all cues cut for 2 beats (true silence)** → sub drop + metal lock + braam tail | the biggest moment — silence is the punch |
+| B7 | drone resolves to residual hum, final soft tick | residual |
 
 Every cue sits on the 72bpm grid — SFX land on beats or subdivisions, never
-free-floating. **Sourcing:** `/media-use resolve` — synthesized where possible
-(clicks/ticks are trivially synthesized deterministically); bed = generated or
-catalog dark-pulse loop, licensing recorded in the media ledger.
+free-floating. **Sourcing:** `/media-use resolve` — everything synthesized or
+from catalog with licenses recorded in the media ledger; the drone is
+synthesized in-house (sine + slow LFO on amplitude), no external asset needed.
 
 ## 7. Deterministic-render rules (hard constraints)
 
@@ -251,10 +257,10 @@ catalog dark-pulse loop, licensing recorded in the media ledger.
 |---|---|
 | `assets/logo.svg` (›_ mark) | ✅ in repo |
 | `assets/logo-wordmark.svg`, `logo-banner.svg` | ✅ in repo |
-| **BOT Chain B-mark** | ⚠️ **need clean file** — pasted jpg is lossy/small; supply official SVG/PNG ≥1024px (or approval to pull from botchain.ai brand assets) |
+| **BOT Chain B-mark** | ✅ `app/public/botchain-logo.jpg` — 400×400, teal-on-black; composites clean on the void. **Plan: trace to SVG at build** (flat geometric mark → perfect vectorization) so the B6 slam renders at infinite sharpness and the teal is controllable; JPG kept as fallback ≤400px display |
 | JetBrains Mono | ✅ licensed OFL — pull woff2/TTF for the composition |
-| Dashboard URL | ⚠️ **confirm** — not recorded in README/SPEC; the end card needs it |
-| SFX + music bed | resolve at build via `/media-use` (dark sub-pulse ~72bpm) |
+| Dashboard URL | ✅ `https://botoracle.druxamb.dev/` |
+| SFX + drone | resolve at build via `/media-use` — no music track; drone synthesized in-house |
 | Real addresses/tx | ✅ from `SPEC.md` deployment record + live RPC at build time |
 
 ## 9. Mock vs real — the honesty ledger
@@ -312,7 +318,12 @@ the explorer, it verifies.
 
 ## 13. Open items for the owner
 
-1. **Dashboard URL** for the end card (not in README/SPEC).
-2. **Clean BOT Chain logo** — SVG or ≥1024px PNG.
-3. Music bed final pick — I'll pull 2–3 candidates at build for you to hear.
-4. Confirm: 30.0s hard cap incl. loop tail ✓ (as spec'd).
+All resolved:
+
+1. ~~Dashboard URL~~ → `https://botoracle.druxamb.dev/` ✓
+2. ~~BOT Chain logo~~ → `app/public/botchain-logo.jpg` ✓ (trace-to-SVG at build)
+3. ~~Music~~ → no music track; SFX-led, drone is sound design ✓
+4. 30.0s hard cap incl. loop tail ✓
+
+**Remaining decision at build:** drone in or out — one-fader A/B at mix pass,
+owner calls it after hearing both.
