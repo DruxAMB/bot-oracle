@@ -23,12 +23,10 @@ export default function ResultModal({
       >
         result
       </button>
-      {open && (
-        <Dialog onClose={() => setOpen(false)} labelId={labelId} wide>
-          <DialogHeader id={labelId} title={`Request #${requestId} · result`} onClose={() => setOpen(false)} />
-          <Markdown>{result}</Markdown>
-        </Dialog>
-      )}
+      <Dialog open={open} onClose={() => setOpen(false)} labelId={labelId} size="2xl">
+        <DialogHeader id={labelId} title={`Request #${requestId} · result`} onClose={() => setOpen(false)} />
+        <Markdown>{result}</Markdown>
+      </Dialog>
     </>
   );
 }

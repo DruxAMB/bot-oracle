@@ -95,7 +95,13 @@ function CopyRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function WalletModal({ onClose }: { onClose: () => void }) {
+export default function WalletModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const wallets = useSyncExternalStore(subscribeWallets, getWallets, () => [] as AnnouncedWallet[]);
   const { connect, status, connectError, chain } = useWallet();
   const [busy, setBusy] = useState<string | null>(null);
@@ -132,7 +138,7 @@ export default function WalletModal({ onClose }: { onClose: () => void }) {
   const connecting = status === "connecting";
 
   return (
-    <Dialog onClose={onClose} labelId="wallet-h">
+    <Dialog open={open} onClose={onClose} labelId="wallet-h" size="sm">
       <DialogHeader id="wallet-h" title="Connect wallet" onClose={onClose} />
       <p className="mb-3 text-xs text-muted-foreground">
         Pick the wallet to sign with. BOT Chain mainnet, chain 677.
@@ -234,8 +240,7 @@ export default function WalletModal({ onClose }: { onClose: () => void }) {
         </p>
       )}
       <p className="mt-3 text-[11px] leading-relaxed text-steel">
-        Wallet connects via EIP-6963 / window.ethereum. You can switch networks inside
-        the wallet; we prompt a network switch if you land on the wrong chain.
+        Wallet connects via EIP-6963 / window.ethereum. We prompt a network switch if you land on the wrong chain.
       </p>
     </Dialog>
   );

@@ -4,6 +4,7 @@ import Playground from "./Playground";
 import AutoRefresh from "./AutoRefresh";
 import ConnectsStat from "./ConnectsStat";
 import StatValue from "./StatValue";
+import Disclosure from "./Disclosure";
 import { WalletProvider, ConnectWalletButton } from "./Wallet";
 import Toaster from "./Toaster";
 import CopyCommand from "./CopyCommand";
@@ -126,21 +127,18 @@ export default async function Home() {
         </section>
 
         <section aria-labelledby="sentinel-h" className="category-mark rounded-lg border border-border bg-card mb-8">
-          <details className="group">
-            <summary className="flex flex-wrap items-baseline justify-between gap-2 p-5 pb-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden rounded-lg focus-visible:outline-2 focus-visible:outline-primary">
-              <h2 id="sentinel-h" className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                <span aria-hidden className="inline-block text-steel transition-transform group-open:rotate-90">›</span>
-                Sentinel · autonomous consumer
-              </h2>
-              <span className="text-xs text-muted-foreground">
-                {String(d.sentinelTicks)} ticks ·
-                {d.sentinelReportAt ? ` last report ${ago(now - d.sentinelReportAt)}` : " no reports yet"} ·
-                {nextTickIn != null && ` next tick in ~${Math.ceil(nextTickIn / 60)}m`} ·
-                {d.sentinelQueryPrice > 0n && d.sentinelBalance < d.sentinelQueryPrice
-                  ? "purse empty - needs top-up to keep ticking"
-                  : `balance ${Number(formatEther(d.sentinelBalance)).toFixed(3)} BOT`}
-              </span>
-            </summary>
+          <Disclosure
+            headingId="sentinel-h"
+            heading="Sentinel · autonomous consumer"
+            meta={<>
+              {String(d.sentinelTicks)} ticks ·
+              {d.sentinelReportAt ? ` last report ${ago(now - d.sentinelReportAt)}` : " no reports yet"} ·
+              {nextTickIn != null && ` next tick in ~${Math.ceil(nextTickIn / 60)}m`} ·
+              {d.sentinelQueryPrice > 0n && d.sentinelBalance < d.sentinelQueryPrice
+                ? "purse empty - needs top-up to keep ticking"
+                : `balance ${Number(formatEther(d.sentinelBalance)).toFixed(3)} BOT`}
+            </>}
+          >
             <div className="px-5 pb-5">
               {d.sentinelReport ? (
                 <Markdown>{d.sentinelReport}</Markdown>
@@ -154,7 +152,7 @@ export default async function Home() {
                 {ext(`${NET.explorer}/address/${NET.sentinel}`, "contract ↗")}
               </p>
             </div>
-          </details>
+          </Disclosure>
         </section>
 
         <Playground
@@ -264,7 +262,7 @@ export default async function Home() {
                         r.status === "Fulfilled" ? "text-success" :
                         r.status === "Pending" ? "text-warning" : "text-muted-foreground"
                       }>
-                        {r.status}
+                        <StatValue value={r.status} />
                       </span>
                       {r.result && (
                         <ResultModal requestId={r.legacy ? `${r.id} (v1)` : r.id.toString()} result={r.result} />
