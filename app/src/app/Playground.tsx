@@ -280,8 +280,7 @@ export default function Playground({
         </button>
       </div>
 
-      {open && (
-        <Dialog onClose={() => setOpen(false)} labelId="try-h">
+      <Dialog open={open} onClose={() => setOpen(false)} labelId="try-h">
           <DialogHeader id="try-h" title="Try the oracle" onClose={() => setOpen(false)} />
           <p className="text-xs text-muted-foreground mb-4">
               A real on-chain request signed by your wallet; you pay BOT, the operator runs the
@@ -427,8 +426,7 @@ export default function Playground({
               )}
               {phase.s === "error" && <p className="text-danger">{phase.message}</p>}
             </div>
-        </Dialog>
-      )}
+      </Dialog>
     </section>
   );
 }

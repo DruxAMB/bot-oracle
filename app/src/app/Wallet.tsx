@@ -308,7 +308,7 @@ export function WalletProvider({
   return (
     <WalletContext.Provider value={ctx}>
       {children}
-      {modalOpen && <WalletModal onClose={() => setModalOpen(false)} />}
+      <WalletModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </WalletContext.Provider>
   );
 }

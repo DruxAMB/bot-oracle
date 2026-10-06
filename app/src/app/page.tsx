@@ -262,7 +262,7 @@ export default async function Home() {
                         r.status === "Fulfilled" ? "text-success" :
                         r.status === "Pending" ? "text-warning" : "text-muted-foreground"
                       }>
-                        {r.status}
+                        <StatValue value={r.status} />
                       </span>
                       {r.result && (
                         <ResultModal requestId={r.legacy ? `${r.id} (v1)` : r.id.toString()} result={r.result} />
