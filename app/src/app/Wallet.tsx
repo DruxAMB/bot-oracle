@@ -105,7 +105,16 @@ export function WalletProvider({
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ address: accounts[0] }),
-          }).catch(() => {});
+          })
+            .then((r) => r.json())
+            .then((j) => {
+              if (typeof j?.count === "number") {
+                window.dispatchEvent(
+                  new CustomEvent<number>("bo:connects", { detail: j.count })
+                );
+              }
+            })
+            .catch(() => {});
         }
       } catch {}
       return "ready";
