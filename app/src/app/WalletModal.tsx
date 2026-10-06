@@ -200,21 +200,11 @@ export default function WalletModal({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={() => setShowManual((s) => !s)}
           aria-expanded={showManual}
-          className="flex w-full items-center gap-3 rounded-lg border border-border px-3.5 py-3 text-left transition-colors hover:border-secondary hover:bg-elevated focus-visible:outline-2 focus-visible:outline-primary"
+          className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-primary"
         >
-          <span
-            aria-hidden
-            className="flex h-6 w-6 items-center justify-center rounded border border-border-strong font-mono text-xs text-muted-foreground"
-          >
-            +
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm text-foreground">Add {chain.name} manually</span>
-            <span className="block truncate text-xs text-muted-foreground">
-              {showManual ? "hide network details" : "copy RPC, chain ID & explorer"}
-            </span>
-          </span>
-          <span aria-hidden className="text-xs text-steel">{showManual ? "▴" : "▾"}</span>
+          {showManual
+            ? "Hide network details ▴"
+            : `Add ${chain.name} to your wallet manually ▾`}
         </button>
         {showManual && (
           <div className="mt-2 space-y-2.5 rounded bg-background border border-border p-3">
