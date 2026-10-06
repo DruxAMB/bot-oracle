@@ -206,20 +206,26 @@ export default function WalletModal({ onClose }: { onClose: () => void }) {
             ? "Hide network details ▴"
             : `Add ${chain.name} to your wallet manually ▾`}
         </button>
-        {showManual && (
-          <div className="mt-2 space-y-2.5 rounded bg-background border border-border p-3">
-            <CopyRow label="Network name" value={chain.name} />
-            <CopyRow label="Chain ID" value={String(chain.id)} />
-            <CopyRow label="Chain ID (hex)" value={chain.hexId} />
-            <CopyRow label="RPC URL" value={chain.rpc} />
-            <CopyRow label="Currency symbol" value={chain.symbol} />
-            <CopyRow label="Block explorer" value={chain.explorer} />
-            <p className="pt-1 text-[11px] leading-relaxed text-steel">
-              In your wallet: Settings → Networks → Add network manually, then
-              paste each field.
-            </p>
+        <div
+          className="manual-expand"
+          data-open={showManual ? "" : undefined}
+          inert={!showManual}
+        >
+          <div className="manual-inner">
+            <div className="manual-body mt-2 space-y-2.5 rounded bg-background border border-border p-3">
+              <CopyRow label="Network name" value={chain.name} />
+              <CopyRow label="Chain ID" value={String(chain.id)} />
+              <CopyRow label="Chain ID (hex)" value={chain.hexId} />
+              <CopyRow label="RPC URL" value={chain.rpc} />
+              <CopyRow label="Currency symbol" value={chain.symbol} />
+              <CopyRow label="Block explorer" value={chain.explorer} />
+              <p className="pt-1 text-[11px] leading-relaxed text-steel">
+                In your wallet: Settings → Networks → Add network manually, then
+                paste each field.
+              </p>
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {connectError && (

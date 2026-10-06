@@ -143,6 +143,38 @@
   }
 }
 
+/* manual-network disclosure - grid-rows 0fr->1fr expands the clip to the
+   content's natural height; the body drifts down 6px as it reveals */
+.manual-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.24s ease;
+}
+.manual-expand[data-open] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.manual-expand .manual-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+.manual-expand .manual-body {
+  transform: translateY(-6px);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.manual-expand[data-open] .manual-body {
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .manual-expand,
+  .manual-expand .manual-body {
+    transition: none;
+  }
+}
+
 /* scrollbars wear the theme - void track, iron thumb, flat everywhere */
 * {
   scrollbar-width: thin;
