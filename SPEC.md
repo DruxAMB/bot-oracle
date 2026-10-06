@@ -274,7 +274,11 @@ per contract; `upgradeToAndCall` via `script/Upgrade.s.sol` (onlyOwner).
 All impls verified on scan.botchain.ai; proxies auto-verified by bytecode
 match. Dashboard reads the v1 coordinator `0x8f48…B07E` as
 `NEXT_PUBLIC_LEGACY_COORDINATOR` for combined history. v1 mainnet Sentinel
-`0x2ca8…5023` holds ~1.88 BOT stranded (v1 had no rescue()). Operator
+`0x2ca8…5023` purse was fully recovered (~1.86 BOT) via an owner price-knob
+sweep: setModel(sentinel:v1, 1.86) + setQuery to match -> single tick sent
+the whole balance as one fee -> manual fulfill paid ~90% to operator, ~10%
+to treasury (tx `0x654e5066…` tick, `0x5a6fc861…` fulfill). v1 is inert at
+zero balance; model price + queryPrice restored to 0.02. Operator
 re-registered on the new registry (tx `0xfca0bbdc…`, 0.1 BOT stake).
 Tick #1 fulfilled `0xe219f389…` - callback out-of-gassed at 300k on the
 ~544B report (17 slots), `setCallbackGas(800k)` applied tx `0xa53cee53…`.
