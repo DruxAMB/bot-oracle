@@ -3,6 +3,7 @@ import { formatEther, id } from "ethers";
 import Playground from "./Playground";
 import AutoRefresh from "./AutoRefresh";
 import ConnectsStat from "./ConnectsStat";
+import StatValue from "./StatValue";
 import { WalletProvider, ConnectWalletButton } from "./Wallet";
 import Toaster from "./Toaster";
 import CopyCommand from "./CopyCommand";
@@ -110,7 +111,7 @@ export default async function Home() {
           {stats.slice(0, 2).map((s) => (
             <div key={s.label} className="rounded-lg border border-border bg-card p-4">
               <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
-              <div className="text-xl font-medium text-foreground">{s.value}</div>
+              <div className="text-xl font-medium text-foreground"><StatValue value={s.value} /></div>
               {s.sub && <div className="text-[11px] text-steel mt-0.5">{s.sub}</div>}
             </div>
           ))}
@@ -118,7 +119,7 @@ export default async function Home() {
           {stats.slice(2).map((s) => (
             <div key={s.label} className="rounded-lg border border-border bg-card p-4">
               <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
-              <div className="text-xl font-medium text-foreground">{s.value}</div>
+              <div className="text-xl font-medium text-foreground"><StatValue value={s.value} /></div>
               {s.sub && <div className="text-[11px] text-steel mt-0.5">{s.sub}</div>}
             </div>
           ))}

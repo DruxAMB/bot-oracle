@@ -95,6 +95,33 @@
   }
 }
 
+/* stat roll - odometer swap: clipped two-cell track slides up so the old
+   value exits top and the new one rises from below */
+.stat-roll {
+  display: inline-block;
+  overflow: hidden;
+  height: 1.4em;
+  vertical-align: bottom;
+}
+.stat-roll-track {
+  display: flex;
+  flex-direction: column;
+}
+.stat-roll-track[data-rolling] {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(-50%);
+}
+.stat-roll-cell {
+  display: block;
+  height: 1.4em;
+  line-height: 1.4em;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stat-roll-track[data-rolling] {
+    transition: none;
+  }
+}
+
 /* scrollbars wear the theme - void track, iron thumb, flat everywhere */
 * {
   scrollbar-width: thin;

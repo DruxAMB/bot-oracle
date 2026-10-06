@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import StatValue from "./StatValue";
 
 // Stat tile: headline = wallets that have connected (self-reported via
 // /api/connects), sub-line = on-chain payers (EOA requesters) + contract
@@ -40,10 +41,13 @@ export default function ConnectsStat({
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="text-xs text-muted-foreground mb-1">Connected users</div>
-      <div className="text-xl font-medium text-foreground">{count ?? "…"}</div>
+      <div className="text-xl font-medium text-foreground">
+        <StatValue value={count == null ? "…" : String(count)} />
+      </div>
       <div className="text-[11px] text-steel mt-0.5">
-        {payers} payer{payers === 1 ? "" : "s"}
-        {contracts > 0 ? ` · +${contracts} contract` : ""}
+        <StatValue
+          value={`${payers} payer${payers === 1 ? "" : "s"}${contracts > 0 ? ` · +${contracts} contract` : ""}`}
+        />
       </div>
     </div>
   );
