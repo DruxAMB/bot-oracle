@@ -54,10 +54,52 @@ function WalletRow({
   );
 }
 
+function CopyRow({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = value;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    setCopied(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopied(false), 1600);
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase tracking-wide text-steel">{label}</div>
+        <div className="truncate font-mono text-xs text-secondary" title={value}>
+          {value}
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={copy}
+        className="shrink-0 text-xs text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary"
+      >
+        {copied ? "copied ✓" : "copy"}
+      </button>
+    </div>
+  );
+}
+
 export default function WalletModal({ onClose }: { onClose: () => void }) {
   const wallets = useSyncExternalStore(subscribeWallets, getWallets, () => [] as AnnouncedWallet[]);
-  const { connect, status, connectError } = useWallet();
+  const { connect, status, connectError, chain } = useWallet();
   const [busy, setBusy] = useState<string | null>(null);
+  const [showManual, setShowManual] = useState(false);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -150,6 +192,32 @@ export default function WalletModal({ onClose }: { onClose: () => void }) {
             disabled={connecting}
             onClick={() => pick("injected", injected)}
           />
+        )}
+      </div>
+
+      <div className="mt-3">
+        <button
+          type="button"
+          onClick={() => setShowManual((s) => !s)}
+          aria-expanded={showManual}
+          className="w-full rounded-lg border border-dashed border-border-strong px-3.5 py-2.5 text-left text-xs text-muted-foreground transition-colors hover:border-secondary hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary"
+        >
+          Add {chain.name} to your wallet manually{" "}
+          <span aria-hidden className="text-steel">{showManual ? "▴" : "▾"}</span>
+        </button>
+        {showManual && (
+          <div className="mt-2 space-y-2.5 rounded-lg border border-border p-3">
+            <CopyRow label="Network name" value={chain.name} />
+            <CopyRow label="Chain ID" value={String(chain.id)} />
+            <CopyRow label="Chain ID (hex)" value={chain.hexId} />
+            <CopyRow label="RPC URL" value={chain.rpc} />
+            <CopyRow label="Currency symbol" value={chain.symbol} />
+            <CopyRow label="Block explorer" value={chain.explorer} />
+            <p className="pt-1 text-[11px] leading-relaxed text-steel">
+              In your wallet: Settings → Networks → Add network manually, then
+              paste each field.
+            </p>
+          </div>
         )}
       </div>
 

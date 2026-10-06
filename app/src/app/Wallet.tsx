@@ -13,6 +13,8 @@ interface WalletCtxValue {
   address: string;
   balance: bigint;
   connectError: string;
+  /** Chain params - shown by the modal's manual add-network details. */
+  chain: { name: string; id: number; hexId: string; rpc: string; explorer: string; symbol: string };
   /** The EIP-1193 provider the user picked (or window.ethereum default). */
   provider: Eip1193Provider | undefined;
   connect(provider?: Eip1193Provider): Promise<void>;
@@ -27,6 +29,7 @@ const WalletContext = createContext<WalletCtxValue>({
   address: "",
   balance: 0n,
   connectError: "",
+  chain: { name: "", id: 0, hexId: "0x0", rpc: "", explorer: "", symbol: "" },
   provider: undefined,
   connect: async () => {},
   disconnect: () => {},
@@ -282,13 +285,24 @@ export function WalletProvider({
   }, [refresh, provider]);
 
   const openWalletModal = useCallback(() => setModalOpen(true), []);
+  const chain = useMemo(
+    () => ({
+      name: chainName,
+      id: chainId,
+      hexId: "0x" + chainId.toString(16),
+      rpc,
+      explorer,
+      symbol: "BOT",
+    }),
+    [chainName, chainId, rpc, explorer]
+  );
   // Memoize: a fresh object every render would re-render every consumer
   // (Playground, modal, connect button) on any provider state change.
   const ctx = useMemo<WalletCtxValue>(
     () => ({
-      status, address, balance, connectError, provider, connect, disconnect, switchChain, refresh, openWalletModal,
+      status, address, balance, connectError, chain, provider, connect, disconnect, switchChain, refresh, openWalletModal,
     }),
-    [status, address, balance, connectError, provider, connect, disconnect, switchChain, refresh, openWalletModal]
+    [status, address, balance, connectError, chain, provider, connect, disconnect, switchChain, refresh, openWalletModal]
   );
 
   return (
