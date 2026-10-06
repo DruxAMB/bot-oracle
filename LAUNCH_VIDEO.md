@@ -327,3 +327,28 @@ All resolved:
 
 **Remaining decision at build:** drone in or out — one-fader A/B at mix pass,
 owner calls it after hearing both.
+
+---
+
+## Addendum — v2 (BGM re-cut, shipped)
+
+Owner decision reversed §3: a real music bed replaced the synthesized drone.
+
+- **Track:** HeyGen audio catalog, `Astral Generated Music: f1bef44a`
+  ("dark cinematic trailer, icy atmospheric, heavy bass hits"), 30.000s,
+  ~86–129bpm detection range; stored at
+  `videos/bot-oracle-launch/assets/bgm/launch-bed.mp3`, beat/onset map at
+  `assets/bgm/beat_map.json` (candidates kept under `assets/bgm/candidates/`).
+- **Retime:** every frame's anchors re-landed on the track's real
+  transients — packet hops on intro sub-pulses (0.56/1.09/1.95), tiles on
+  eighths, feed rows on kicks, `#9` status flip on the biggest kick (11.63),
+  row-3 stamp on the track's loudest hit (14.79), orbit lap = exactly 4 beats
+  (19.41→21.27) with node pulses on quarter-beats, warning flicker on the
+  22.18 pre-hit, marks slam on 22.83, claim words land one-per-hit
+  (23.55/24.01/24.47/24.92/25.43), sub-line on 25.8, dim into the track's
+  natural dead tail (29–30).
+- **Logo:** `botchain-mark.svg` (real vector from `app/public/botchain-logo.svg`)
+  replaced the keyed PNG — sharp at slam scale.
+- **Audio:** BGM 0.8 + 43 re-offset SFX cues; renderer leveled mix to −1dBTP.
+- **Render:** `renders/bot-oracle-launch_bgm_60fps.mp4` — 1920×1080, 60fps,
+  30.000s, AAC; `npm run check` green (0 errors, 156/156 contrast).
