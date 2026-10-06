@@ -9,9 +9,11 @@ import StatValue from "./StatValue";
 export default function ConnectsStat({
   payers,
   contracts,
+  delay = 0,
 }: {
   payers: number;
   contracts: number;
+  delay?: number;
 }) {
   const [count, setCount] = useState<number | null>(null);
 
@@ -42,11 +44,12 @@ export default function ConnectsStat({
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="text-xs text-muted-foreground mb-1">Connected users</div>
       <div className="text-xl font-medium text-foreground">
-        <StatValue value={count == null ? "…" : String(count)} />
+        <StatValue value={count == null ? "…" : String(count)} delay={delay} />
       </div>
       <div className="text-[11px] text-steel mt-0.5">
         <StatValue
           value={`${payers} payer${payers === 1 ? "" : "s"}${contracts > 0 ? ` · +${contracts} contract` : ""}`}
+          delay={delay}
         />
       </div>
     </div>

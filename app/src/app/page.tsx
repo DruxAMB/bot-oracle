@@ -108,18 +108,18 @@ export default async function Home() {
           </header>
 
         <section aria-label="network stats" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
-          {stats.slice(0, 2).map((s) => (
+          {stats.slice(0, 2).map((s, i) => (
             <div key={s.label} className="rounded-lg border border-border bg-card p-4">
               <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
-              <div className="text-xl font-medium text-foreground"><StatValue value={s.value} /></div>
+              <div className="text-xl font-medium text-foreground"><StatValue value={s.value} delay={i * 60} /></div>
               {s.sub && <div className="text-[11px] text-steel mt-0.5">{s.sub}</div>}
             </div>
           ))}
-          <ConnectsStat payers={d.uniquePayers} contracts={d.contractConsumers} />
-          {stats.slice(2).map((s) => (
+          <ConnectsStat payers={d.uniquePayers} contracts={d.contractConsumers} delay={120} />
+          {stats.slice(2).map((s, i) => (
             <div key={s.label} className="rounded-lg border border-border bg-card p-4">
               <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
-              <div className="text-xl font-medium text-foreground"><StatValue value={s.value} /></div>
+              <div className="text-xl font-medium text-foreground"><StatValue value={s.value} delay={(i + 3) * 60} /></div>
               {s.sub && <div className="text-[11px] text-steel mt-0.5">{s.sub}</div>}
             </div>
           ))}

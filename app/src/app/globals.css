@@ -122,6 +122,27 @@
   }
 }
 
+/* stat entrance - gentle rise+fade behind the JS count-up (and the sole
+   entrance for non-numeric values) */
+.stat-fade {
+  animation: stat-fade-in 0.45s ease-out both;
+}
+@keyframes stat-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stat-fade {
+    animation: none;
+  }
+}
+
 /* scrollbars wear the theme - void track, iron thumb, flat everywhere */
 * {
   scrollbar-width: thin;
