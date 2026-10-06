@@ -288,7 +288,7 @@ export default async function Home() {
         </section>
 
         <div className="mb-8">
-          <section id="integrate-h" aria-labelledby="integrate-h-label" className="min-w-0 scroll-mt-6 rounded-lg border border-border p-5">
+          <section id="integrate-h" aria-labelledby="integrate-h-label" className="relative min-w-0 scroll-mt-6 rounded-lg border border-border p-5">
             <h2 id="integrate-h-label" className="text-sm font-medium text-secondary mb-3">Use the oracle</h2>
             <p className="text-xs text-muted-foreground mb-2">HTTP gateway · one call, on-chain round trip (run your own: <code className="text-steel">gateway/</code> in the repo):</p>
             <pre className="overflow-x-auto rounded bg-background border border-border p-3 text-xs text-secondary">{`curl -X POST http://localhost:8791/v1/query \\
@@ -305,6 +305,9 @@ const value = await o.priceOf(OracleClient.modelId("echo:v1"));
 const { requestId } = await o.request({ modelId: OracleClient.modelId("echo:v1"), prompt: "hello", value });
 await o.awaitResult(requestId);
 const text = await o.getResult(requestId);`}</pre>
+            <svg className="anchor-beam" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="2" pathLength="100" />
+            </svg>
           </section>
         </div>
 

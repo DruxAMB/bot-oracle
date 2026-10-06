@@ -51,18 +51,48 @@
   border-left: 2px solid var(--color-primary);
 }
 
-/* anchor-jump flash: ember border snap, hold, slow ease back to iron.
-   Class-driven (not :target) so every anchor click can restart it. */
-@keyframes anchor-flash {
-  0%, 50% {
-    border-color: var(--color-primary);
-  }
-  100% {
-    border-color: var(--color-border);
+/* anchor-jump beam: an ember segment laps the card border (SaaS shimmer).
+   Class-driven (not :target) so every anchor click can restart it.
+   pathLength=100 normalizes the rect path so 100 dash units = one lap. */
+.anchor-beam {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+}
+.anchor-beam rect {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-dasharray: 10 90;
+  stroke-dashoffset: 0;
+}
+.anchor-flash .anchor-beam {
+  animation: beam-fade 2s ease-in-out;
+}
+.anchor-flash .anchor-beam rect {
+  animation: beam-run 2s linear;
+}
+@keyframes beam-run {
+  to {
+    stroke-dashoffset: -100;
   }
 }
-.anchor-flash {
-  animation: anchor-flash 2s ease-in-out;
+@keyframes beam-fade {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 /* scrollbars wear the theme - void track, iron thumb, flat everywhere */
