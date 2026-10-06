@@ -200,13 +200,24 @@ export default function WalletModal({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={() => setShowManual((s) => !s)}
           aria-expanded={showManual}
-          className="w-full rounded-lg border border-dashed border-border-strong px-3.5 py-2.5 text-left text-xs text-muted-foreground transition-colors hover:border-secondary hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary"
+          className="flex w-full items-center gap-3 rounded-lg border border-border px-3.5 py-3 text-left transition-colors hover:border-secondary hover:bg-elevated focus-visible:outline-2 focus-visible:outline-primary"
         >
-          Add {chain.name} to your wallet manually{" "}
-          <span aria-hidden className="text-steel">{showManual ? "▴" : "▾"}</span>
+          <span
+            aria-hidden
+            className="flex h-6 w-6 items-center justify-center rounded border border-border-strong font-mono text-xs text-muted-foreground"
+          >
+            +
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm text-foreground">Add {chain.name} manually</span>
+            <span className="block truncate text-xs text-muted-foreground">
+              {showManual ? "hide network details" : "copy RPC, chain ID & explorer"}
+            </span>
+          </span>
+          <span aria-hidden className="text-xs text-steel">{showManual ? "▴" : "▾"}</span>
         </button>
         {showManual && (
-          <div className="mt-2 space-y-2.5 rounded-lg border border-border p-3">
+          <div className="mt-2 space-y-2.5 rounded bg-background border border-border p-3">
             <CopyRow label="Network name" value={chain.name} />
             <CopyRow label="Chain ID" value={String(chain.id)} />
             <CopyRow label="Chain ID (hex)" value={chain.hexId} />
