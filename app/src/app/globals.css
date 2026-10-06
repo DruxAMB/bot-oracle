@@ -51,6 +51,19 @@
   border-left: 2px solid var(--color-primary);
 }
 
+/* anchor-jump flash: ember border snap, brief hold, ease back to iron */
+@keyframes anchor-flash {
+  0%, 40% {
+    border-color: var(--color-primary);
+  }
+  100% {
+    border-color: var(--color-border);
+  }
+}
+#integrate-h:target {
+  animation: anchor-flash 2s ease-out;
+}
+
 /* scrollbars wear the theme - void track, iron thumb, flat everywhere */
 * {
   scrollbar-width: thin;

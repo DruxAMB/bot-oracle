@@ -252,6 +252,13 @@ export default function Playground({
         )}
         <a
           href="#integrate-h"
+          onClick={() => {
+            const el = document.getElementById("integrate-h");
+            if (!el) return;
+            el.style.animation = "none";
+            void el.offsetHeight;
+            el.style.animation = "";
+          }}
           className="text-xs text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary"
         >
           integrate the SDK ↓
