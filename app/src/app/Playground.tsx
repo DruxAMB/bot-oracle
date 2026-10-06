@@ -179,6 +179,21 @@ export default function Playground({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Flash the integrate card's border on every jump (and on direct
+  // #integrate-h loads). Removing the class + forced reflow is what makes
+  // the animation restart on repeat clicks to the same hash.
+  function flashIntegrate() {
+    const el = document.getElementById("integrate-h");
+    if (!el) return;
+    el.classList.remove("anchor-flash");
+    void el.offsetHeight;
+    el.classList.add("anchor-flash");
+  }
+
+  useEffect(() => {
+    if (window.location.hash === "#integrate-h") flashIntegrate();
+  }, []);
+
   async function send() {
     if (!model || !prompt.trim()) return;
     setPhase({ s: "signing" });
@@ -252,13 +267,7 @@ export default function Playground({
         )}
         <a
           href="#integrate-h"
-          onClick={() => {
-            const el = document.getElementById("integrate-h");
-            if (!el) return;
-            el.style.animation = "none";
-            void el.offsetHeight;
-            el.style.animation = "";
-          }}
+          onClick={flashIntegrate}
           className="text-xs text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary"
         >
           integrate the SDK ↓

@@ -51,17 +51,18 @@
   border-left: 2px solid var(--color-primary);
 }
 
-/* anchor-jump flash: ember border snap, brief hold, ease back to iron */
+/* anchor-jump flash: ember border snap, hold, slow ease back to iron.
+   Class-driven (not :target) so every anchor click can restart it. */
 @keyframes anchor-flash {
-  0%, 40% {
+  0%, 50% {
     border-color: var(--color-primary);
   }
   100% {
     border-color: var(--color-border);
   }
 }
-#integrate-h:target {
-  animation: anchor-flash 2s ease-out;
+.anchor-flash {
+  animation: anchor-flash 2s ease-in-out;
 }
 
 /* scrollbars wear the theme - void track, iron thumb, flat everywhere */
