@@ -132,7 +132,7 @@ export default function WalletModal({ onClose }: { onClose: () => void }) {
   const connecting = status === "connecting";
 
   return (
-    <Dialog onClose={onClose} labelId="wallet-h">
+    <Dialog onClose={onClose} labelId="wallet-h" size="sm">
       <DialogHeader id="wallet-h" title="Connect wallet" onClose={onClose} />
       <p className="mb-3 text-xs text-muted-foreground">
         Pick the wallet to sign with. BOT Chain mainnet, chain 677.

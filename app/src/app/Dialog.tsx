@@ -5,15 +5,21 @@ import { useEffect, useRef } from "react";
 // Shared accessible modal shell: Escape closes, backdrop click closes,
 // focus moves into the dialog on open and returns on close, body scroll
 // is locked while open.
+const SIZES = {
+  sm: "sm:max-w-sm",
+  lg: "sm:max-w-lg",
+  "2xl": "sm:max-w-2xl",
+} as const;
+
 export default function Dialog({
   onClose,
   labelId,
-  wide = false,
+  size = "lg",
   children,
 }: {
   onClose: () => void;
   labelId: string;
-  wide?: boolean;
+  size?: keyof typeof SIZES;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -51,7 +57,7 @@ export default function Dialog({
         aria-modal="true"
         aria-labelledby={labelId}
         tabIndex={-1}
-        className={`relative w-full ${wide ? "sm:max-w-2xl" : "sm:max-w-lg"} rounded-t-xl sm:rounded-xl border border-border-strong bg-card p-5 outline-none max-h-[90vh] overflow-y-auto`}
+        className={`relative w-full ${SIZES[size]} rounded-t-xl sm:rounded-xl border border-border-strong bg-card p-5 outline-none max-h-[90vh] overflow-y-auto`}
       >
         {children}
       </div>
