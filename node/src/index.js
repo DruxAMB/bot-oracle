@@ -183,8 +183,10 @@ if (process.env.SENTINEL_ADDRESS) {
       console.log(`sentinel tick skipped: ${(e.shortMessage ?? e.message)?.slice(0, 80)}`);
     }
     try {
-      const [mi, last] = await Promise.all([sentinel.minInterval(), sentinel.lastTickAt()]);
-      delay = Math.max(30_000, Number(last + mi) * 1000 - Date.now() + 5_000);
+      const [mi, last, headBlk] = await Promise.all([sentinel.minInterval(), sentinel.lastTickAt(), provider.getBlock("latest")]);
+      // block.timestamp may be skewed vs wall clock (botchain runs ~37min
+      // ahead) - measure remaining wait on the chain clock, not Date.now().
+      delay = Math.max(30_000, (Number(last) + Number(mi) - headBlk.timestamp) * 1000 + 5_000);
     } catch {}
     setTimeout(arm, delay);
   };
