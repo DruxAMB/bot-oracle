@@ -185,6 +185,12 @@ export function WalletProvider({
       const s = await refresh();
       if (s === "ready") toast.success("Wallet connected");
       else if (s === "wrongChain") toast.warning(`Connected; switch to ${chainName}`);
+      else {
+        // refresh() couldn't confirm (RPC hiccup) or found no accounts -
+        // either way "connecting" must not linger with no feedback.
+        setStatus("idle");
+        toast.error("Connected, but could not verify the chain - retry");
+      }
     },
     [refresh, chainName]
   );

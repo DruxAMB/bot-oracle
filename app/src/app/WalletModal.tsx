@@ -102,7 +102,7 @@ export default function WalletModal({
   open: boolean;
   onClose: () => void;
 }) {
-  const wallets = useSyncExternalStore(subscribeWallets, getWallets, () => [] as AnnouncedWallet[]);
+  const wallets = useSyncExternalStore(subscribeWallets, getWallets, getWallets);
   const { connect, status, connectError, chain } = useWallet();
   const [busy, setBusy] = useState<string | null>(null);
   const [showManual, setShowManual] = useState(false);

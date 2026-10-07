@@ -70,12 +70,14 @@ export default function Playground({
   chainId,
   rpc,
   explorer,
+  asleep = false,
 }: {
   coordinator: string;
   models: ModelOpt[];
   chainId: number;
   rpc: string;
   explorer: string;
+  asleep?: boolean;
 }) {
   const wallet = useWallet();
   const [open, setOpen] = useState(false);
@@ -384,6 +386,11 @@ export default function Playground({
                   {insufficient && (
                     <span className="text-xs text-warning">
                       Balance too low: needs BOT for the query fee plus gas on BOT Chain mainnet.
+                    </span>
+                  )}
+                  {asleep && (
+                    <span className="text-xs text-warning">
+                      Operator node is asleep - your request queues on-chain and fulfills when it's back.
                     </span>
                   )}
                 </div>

@@ -89,6 +89,8 @@ export type DashData = {
   sentinelMinInterval: number;
   sentinelLastTickAt: number;
   requests: RequestRow[];
+  /** Combined rows omitted from the table when it exceeds MAX_ROWS. */
+  rowsCapped: number;
   legacyRequests: bigint;
   legacyFulfilled: number;
   legacyFeesWei: bigint;
@@ -103,9 +105,13 @@ const EMPTY: DashData = {
   block: 0, totalRequests: 0n, fulfilled: 0, feesWei: 0n, operatorCount: 0n,
   minStake: 0n, models: [], operators: [], sentinelTicks: 0n, sentinelReport: "",
   sentinelReportAt: 0, sentinelBalance: 0n, sentinelQueryPrice: 0n, sentinelMinInterval: 0, sentinelLastTickAt: 0,
-  requests: [], legacyRequests: 0n, legacyFulfilled: 0, legacyFeesWei: 0n,
+  requests: [], rowsCapped: 0, legacyRequests: 0n, legacyFulfilled: 0, legacyFeesWei: 0n,
   uniquePayers: 0, contractConsumers: 0,
 };
+
+// Rows the table is materialised for - each needs one requests() call, so
+// the feed is capped; older history stays reachable via the explorer link.
+const MAX_ROWS = 500;
 
 export async function loadDash(): Promise<DashData> {
   try {
@@ -213,29 +219,16 @@ export async function loadDash(): Promise<DashData> {
     const contractConsumers = codes.filter((c) => c !== "0x").length;
     const uniquePayers = requesters.size - contractConsumers;
 
-    const recent = sentLogs.slice(-10).reverse();
-    const now = Math.floor(Date.now() / 1000);
-    const rows: RequestRow[] = await Promise.all(
-      recent.map(async (l) => {
-        const id = BigInt(l.topics[1]);
-        const r = await coord.requests(id);
-        return {
-          id,
-          requester: "0x" + l.topics[2].slice(26),
-          modelId: l.topics[3],
-          fee: formatEther(r.fee),
-          status: STATUS[Number(r.status)] ?? "?",
-          ageSec: Math.max(0, now - Number(r.createdAt)),
-          operator: Number(r.status) === 1 ? r.operator : null,
-          txHash: l.transactionHash,
-          result: results.get(id.toString()) ?? null,
-        };
-      })
-    );
+    // Full request table (client paginates, no server round-trips).
+    // Combined newest-first id space = every v3 request (descending), then
+    // every legacy request (descending) - v3 was deployed after v1 was
+    // superseded, so generation order is age order.
+    const v3Total = Number(nextId - 1n);
+    const legacyCount = Number(legacyTotal);
+    const totalRows = Math.min(v3Total + legacyCount, MAX_ROWS);
+    const rowsCapped = Math.max(0, v3Total + legacyCount - MAX_ROWS);
 
-    // Legacy coordinator rows - same shape so the table merges seamlessly.
-    // legacyReqs already carries each request's struct; the two legacy log
-    // scans above supply tx hashes and decoded results.
+    const txById = new Map(sentLogs.map((l) => [BigInt(l.topics[1]).toString(), l.transactionHash]));
     const legacyTxById = new Map(
       legacySentLogs.map((l) => [BigInt(l.topics[1]).toString(), l.transactionHash])
     );
@@ -247,24 +240,30 @@ export async function loadDash(): Promise<DashData> {
         legacyResults.set(BigInt(l.topics[1]).toString(), text);
       } catch {}
     }
-    const legacyRows: RequestRow[] = legacyReqs.map((r, i) => {
-      const id = BigInt(i + 1);
-      return {
-        id,
-        requester: r.requester,
-        modelId: r.modelId,
-        fee: formatEther(r.fee),
-        status: STATUS[Number(r.status)] ?? "?",
-        ageSec: Math.max(0, now - Number(r.createdAt)),
-        operator: Number(r.status) === 1 ? r.operator : null,
-        txHash: legacyTxById.get(id.toString()) ?? null,
-        result: legacyResults.get(id.toString()) ?? null,
-        legacy: true,
-      };
-    });
-    const mergedRows = [...rows, ...legacyRows]
-      .sort((a, b) => a.ageSec - b.ageSec)
-      .slice(0, 15);
+
+    const now = Math.floor(Date.now() / 1000);
+    const rows: RequestRow[] = (
+      await Promise.all(
+        Array.from({ length: totalRows }, async (_, idx) => {
+          const legacy = idx >= v3Total;
+          const id = legacy ? BigInt(legacyCount - (idx - v3Total)) : BigInt(v3Total - idx);
+          const r = legacy ? await legacyCoord.requests(id) : await coord.requests(id);
+          const key = id.toString();
+          return {
+            id,
+            requester: r.requester,
+            modelId: r.modelId,
+            fee: formatEther(r.fee),
+            status: STATUS[Number(r.status)] ?? "?",
+            ageSec: Math.max(0, now - Number(r.createdAt)),
+            operator: Number(r.status) === 1 ? r.operator : null,
+            txHash: (legacy ? legacyTxById : txById).get(key) ?? null,
+            result: (legacy ? legacyResults : results).get(key) ?? null,
+            legacy,
+          } satisfies RequestRow;
+        })
+      )
+    ).sort((a, b) => a.ageSec - b.ageSec);
 
     return {
       block,
@@ -282,7 +281,8 @@ export async function loadDash(): Promise<DashData> {
       sentinelQueryPrice: sentPrice,
       sentinelMinInterval: Number(sentInterval),
       sentinelLastTickAt: Number(sentLastTick),
-      requests: mergedRows,
+      requests: rows,
+      rowsCapped,
       legacyRequests: legacyTotal,
       legacyFulfilled,
       legacyFeesWei: legacyFees,

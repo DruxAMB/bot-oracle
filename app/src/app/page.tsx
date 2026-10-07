@@ -9,7 +9,7 @@ import { WalletProvider, ConnectWalletButton } from "./Wallet";
 import Toaster from "./Toaster";
 import CopyCommand from "./CopyCommand";
 import Markdown from "./Markdown";
-import ResultModal from "./ResultModal";
+import RequestsTable from "./RequestsTable";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -38,6 +38,11 @@ export default async function Home() {
   const nextTickIn = d.sentinelLastTickAt
     ? Math.max(0, d.sentinelLastTickAt + d.sentinelMinInterval - now)
     : null;
+  // The Sentinel keeper lives inside the node process - a tick that is >5min
+  // overdue means the node is asleep/down. Chain time may skew vs wall clock,
+  // so the grace absorbs normal lateness without false-offlining.
+  const nodeAsleep =
+    d.sentinelLastTickAt > 0 && now > d.sentinelLastTickAt + d.sentinelMinInterval + 300;
 
   const hasLegacy = d.legacyRequests > 0n;
   const stats = [
@@ -68,7 +73,9 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-surface text-foreground font-sans">
-      <AutoRefresh intervalMs={60_000} />
+      {/* asleep: 60s polling stops; a slow 5min heartbeat still checks for
+          the node's return so the pill flips back to live on its own */}
+      <AutoRefresh intervalMs={nodeAsleep ? 300_000 : 60_000} />
       <WalletProvider
         chainId={NET.chainId}
         chainName={NET.name}
@@ -97,6 +104,11 @@ export default async function Home() {
                 <span className="inline-flex items-center gap-2 rounded-full border border-warning bg-card px-3 py-1 text-xs text-warning">
                   <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />
                   RPC offline: {d.offline}
+                </span>
+              ) : nodeAsleep ? (
+                <span className="inline-flex items-center gap-2 rounded-full border border-warning bg-card px-3 py-1 text-xs text-warning">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />
+                  node asleep · back online soon
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground">
@@ -133,7 +145,9 @@ export default async function Home() {
             meta={<>
               {String(d.sentinelTicks)} ticks ·
               {d.sentinelReportAt ? ` last report ${ago(now - d.sentinelReportAt)}` : " no reports yet"} ·
-              {nextTickIn != null && ` next tick in ~${Math.ceil(nextTickIn / 60)}m`} ·
+              {nodeAsleep
+                ? " node asleep - ticks paused"
+                : nextTickIn != null && ` next tick in ~${Math.ceil(nextTickIn / 60)}m`} ·
               {d.sentinelQueryPrice > 0n && d.sentinelBalance < d.sentinelQueryPrice
                 ? "purse empty - needs top-up to keep ticking"
                 : `balance ${Number(formatEther(d.sentinelBalance)).toFixed(3)} BOT`}
@@ -157,6 +171,7 @@ export default async function Home() {
 
         <Playground
           coordinator={NET.coordinator}
+          asleep={nodeAsleep}
           chainId={NET.chainId}
           rpc={NET.rpc}
           explorer={NET.explorer}
@@ -228,62 +243,12 @@ export default async function Home() {
               "text-xs text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-secondary"
             )}
           </div>
-          <div className="rounded-lg border border-border overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead className="bg-elevated text-muted-foreground text-xs">
-                <tr>
-                  <th scope="col" className="text-left px-4 py-2 font-normal">#</th>
-                  <th scope="col" className="text-left px-4 py-2 font-normal">Requester</th>
-                  <th scope="col" className="text-left px-4 py-2 font-normal">Model</th>
-                  <th scope="col" className="text-left px-4 py-2 font-normal">Fee</th>
-                  <th scope="col" className="text-left px-4 py-2 font-normal">Status</th>
-                  <th scope="col" className="text-left px-4 py-2 font-normal">Age</th>
-                  <th scope="col" className="text-left px-4 py-2 font-normal">Tx</th>
-                </tr>
-              </thead>
-              <tbody>
-                {d.requests.map((r) => (
-                  <tr key={`${r.legacy ? "v1" : "v3"}-${String(r.id)}`} className="border-t border-border align-top">
-                    <td className="px-4 py-2 text-secondary">
-                      {String(r.id)}
-                      {r.legacy && (
-                        <span className="ml-1.5 text-[10px] text-steel border border-border rounded px-1 py-0.5 align-middle">v1</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2 font-mono text-xs">
-                      {ext(`${NET.explorer}/address/${r.requester}`, short(r.requester))}
-                    </td>
-                    <td className="px-4 py-2 font-mono text-xs text-secondary">
-                      {KNOWN_MODELS[r.modelId.toLowerCase()] ?? short(r.modelId)}
-                    </td>
-                    <td className="px-4 py-2 text-secondary">{r.fee}</td>
-                    <td className="px-4 py-2">
-                      <span className={
-                        r.status === "Fulfilled" ? "text-success" :
-                        r.status === "Pending" ? "text-warning" : "text-muted-foreground"
-                      }>
-                        <StatValue value={r.status} />
-                      </span>
-                      {r.result && (
-                        <ResultModal requestId={r.legacy ? `${r.id} (v1)` : r.id.toString()} result={r.result} />
-                      )}
-                    </td>
-                    <td className="px-4 py-2 text-muted-foreground">{ago(r.ageSec)}</td>
-                    <td className="px-4 py-2 font-mono text-xs">
-                      {r.txHash ? ext(`${NET.explorer}/tx/${r.txHash}`, short(r.txHash)) : "-"}
-                    </td>
-                  </tr>
-                ))}
-                {d.requests.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-steel">
-                      No requests in the scanned window; the feed fills as Sentinel ticks land.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <RequestsTable
+            rows={d.requests.map((r) => ({ ...r, id: r.id.toString() }))}
+            capped={d.rowsCapped}
+            explorer={NET.explorer}
+            coordinator={NET.coordinator}
+          />
         </section>
 
         <div className="mb-8">
