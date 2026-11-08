@@ -104,7 +104,7 @@ export function WalletProvider({
         const flag = `bo:counted:${chainId}:${accounts[0].toLowerCase()}`;
         if (!localStorage.getItem(flag)) {
           localStorage.setItem(flag, "1");
-          void fetch("/api/connects", {
+          void fetch("/.netlify/functions/connects", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ address: accounts[0] }),

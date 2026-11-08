@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import StatValue from "./StatValue";
 
 // Stat tile: headline = wallets that have connected (self-reported via
-// /api/connects), sub-line = on-chain payers (EOA requesters) + contract
+// /.netlify/functions/connects), sub-line = on-chain payers (EOA requesters) + contract
 // consumers, which is the verifiable number.
 export default function ConnectsStat({
   payers,
@@ -20,7 +20,7 @@ export default function ConnectsStat({
   useEffect(() => {
     let dead = false;
     const load = () =>
-      fetch("/api/connects", { cache: "no-store" })
+      fetch("/.netlify/functions/connects", { cache: "no-store" })
         .then((r) => r.json())
         .then((j) => {
           if (!dead) setCount(typeof j.count === "number" ? j.count : null);

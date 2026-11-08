@@ -23,7 +23,9 @@ const short = (a: string) => (a && a.length > 12 ? `${a.slice(0, 6)}…${a.slice
 const ago = (s: number) =>
   (s < 0 ? "now" : s < 60 ? `${s}s ago` : s < 3600 ? `${Math.floor(s / 60)}m ago` : `${Math.floor(s / 3600)}h ago`);
 const KNOWN_MODELS: Record<string, string> = Object.fromEntries(
-  ["echo:v1", "sentinel:v1", "gpt-4o-mini:v1"].map((l) => [id(l).toLowerCase(), l])
+  ["echo:v1", "sentinel:v1", "gpt-4o-mini:v1", ...Array.from({ length: 10 }, (_, i) => `agent${i + 1}`)].map(
+    (l) => [id(l).toLowerCase(), l]
+  )
 );
 
 // Windowed page list: [1, …, c-1, c, c+1, …, last] with ellipsis markers.

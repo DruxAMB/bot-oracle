@@ -101,7 +101,7 @@ export type DashData = {
   offline?: string;
 };
 
-const EMPTY: DashData = {
+export const EMPTY_DASH: DashData = {
   block: 0, totalRequests: 0n, fulfilled: 0, feesWei: 0n, operatorCount: 0n,
   minStake: 0n, models: [], operators: [], sentinelTicks: 0n, sentinelReport: "",
   sentinelReportAt: 0, sentinelBalance: 0n, sentinelQueryPrice: 0n, sentinelMinInterval: 0, sentinelLastTickAt: 0,
@@ -290,6 +290,6 @@ export async function loadDash(): Promise<DashData> {
       contractConsumers,
     };
   } catch (e) {
-    return { ...EMPTY, offline: e instanceof Error ? e.message.slice(0, 160) : "rpc unreachable" };
+    return { ...EMPTY_DASH, offline: e instanceof Error ? e.message.slice(0, 160) : "rpc unreachable" };
   }
 }

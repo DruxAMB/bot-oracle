@@ -7,6 +7,10 @@ operator nodes run the models, results land back on-chain; fees flow
 through the protocol. Ships with its own demand: Sentinel, an autonomous
 consumer that pays for scheduled analyses and stores them on-chain.
 
+**Live dashboard:** https://bot-oracle-app.netlify.app — live on-chain stats,
+requests, fulfillments, fees, operators, models, and Sentinel reports, read
+directly from BOT Chain mainnet in the browser.
+
 ## Layout
 
 | Dir | What |
@@ -15,7 +19,7 @@ consumer that pays for scheduled analyses and stores them on-chain.
 | `node/` | Oracle node: getLogs-poller, model backends, fulfiller, Sentinel keeper |
 | `gateway/` | HTTP API: `POST /v1/query`, API keys + usage metering |
 | `packages/sdk/` | `@bot-oracle/sdk`: request / awaitResult / verifyResult; install `npm i https://raw.githubusercontent.com/DruxAMB/bot-oracle/main/dist/bot-oracle-sdk-0.1.1.tgz` (registry publish pending; npm account in preventive suspension until Oct 2); `test/smoke.mjs` runs a live on-chain round trip |
-| `app/` | Next.js dashboard + docs |
+| `app/` | Next.js dashboard + docs (static export; connects counter via Netlify Function) |
 | `starter/` | Clonable consumer template for integrators |
 | `scripts/` | Chain recon + spike probes (RPC, WS, BDEX, deploy, getLogs) |
 | `SPEC.md` | Architecture, monetization, phases, decisions log, deployments |

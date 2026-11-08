@@ -17,3 +17,12 @@ gateway/state/
 .agents/
 brag-output*/
 onchain-records.png
+
+# Local Netlify folder
+.netlify
+
+# Agent/tooling artifacts
+.claude/
+.devin/
+skills-lock.json
+videos/
